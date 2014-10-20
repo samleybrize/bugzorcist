@@ -26,6 +26,6 @@ class FormatterSql implements FormatterInterface
      */
     public function formatPlain($text)
     {
-        return strip_tags(\SqlFormatter::format($text));
+        return \SqlFormatter::format($text, false);
     }
 }
