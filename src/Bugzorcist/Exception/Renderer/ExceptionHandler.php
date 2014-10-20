@@ -41,6 +41,12 @@ class ExceptionHandler
     private $previousExceptionHandler;
 
     /**
+     * Indicates if an exception has been processed
+     * @var boolean
+     */
+    private $handledException = false;
+
+    /**
      * Sets the application config
      * @param mixed $config
      */
@@ -73,6 +79,14 @@ class ExceptionHandler
     public function registerHandler()
     {
         $this->previousExceptionHandler = set_exception_handler(array($this, "handleException"));
+    }
+
+    /**
+     * Throws an exception at the end of the PHP process
+     */
+    public function registerShutdown()
+    {
+        register_shutdown_function(array($this, "onShutdown"));
     }
 
     /**
@@ -118,10 +132,33 @@ class ExceptionHandler
         }
 
         $renderer->render();
+        $this->handledException = true;
 
         // on appelle le handler précédent
         if ($this->previousExceptionHandler && $callPreviousHandler) {
             call_user_func($this->previousExceptionHandler, $e);
         }
+    }
+
+    /**
+     * Callback for "registerShutdown()".
+     * Renders an exception at the very end of the PHP execution.
+     */
+    public function onShutdown()
+    {
+        // if an exception has been processed, don't do anything
+        if ($this->handledException) {
+            return;
+        }
+
+        // clean output buffers
+        $level = ob_get_level();
+
+        for ($i = $level; $i > 0; $i--) {
+            ob_end_clean();
+        }
+
+        // render an exception
+        $this->handleException(new \Exception("This is not an error, you requested an exception to be thrown at the end of the script."));
     }
 }
