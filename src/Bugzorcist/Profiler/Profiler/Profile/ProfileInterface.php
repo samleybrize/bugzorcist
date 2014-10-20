@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\Profiler\Profile;
 
+/**
+ * Profile interface
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 interface ProfileInterface
 {
     /**

@@ -15,6 +15,10 @@ use Doctrine\DBAL\Logging\SQLLogger;
 
 use Bugzorcist\Profiler\DataProfiler\DataProfiler;
 
+/**
+ * Doctrine profiler proxy
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ProxyDoctrine implements SQLLogger
 {
     /**

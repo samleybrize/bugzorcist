@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\VarDump;
 
+/**
+ * Construct the tree representation of a var
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class VarTree
 {
     /**

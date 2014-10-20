@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses PHP config viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesConfigPhp extends NcursesAbstract
 {
     /**

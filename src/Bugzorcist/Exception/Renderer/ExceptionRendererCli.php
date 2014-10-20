@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer;
 
+/**
+ * Cli exception renderer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ExceptionRendererCli extends ExceptionRendererAbstract
 {
     /**

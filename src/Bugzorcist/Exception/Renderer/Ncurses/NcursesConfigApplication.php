@@ -13,6 +13,10 @@ namespace Bugzorcist\Exception\Renderer\Ncurses;
 
 use Bugzorcist\VarDump\VarDumpCliNcurses;
 
+/**
+ * Ncurses application config viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesConfigApplication extends NcursesAbstract
 {
     /**

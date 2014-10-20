@@ -14,6 +14,10 @@ namespace Bugzorcist\Exception\Renderer;
 use Bugzorcist\Profiler\DataProfiler\DataProfilerManager;
 use Bugzorcist\Profiler\Profiler\ProfilerManager;
 
+/**
+ * Exception renderer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 abstract class ExceptionRendererAbstract
 {
     /**

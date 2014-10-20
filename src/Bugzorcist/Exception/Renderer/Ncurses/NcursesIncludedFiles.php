@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses included files viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesIncludedFiles extends NcursesAbstract
 {
     /**

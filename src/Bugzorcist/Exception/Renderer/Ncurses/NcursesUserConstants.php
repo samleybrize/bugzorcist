@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses user constants viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesUserConstants extends NcursesAbstract
 {
     /**

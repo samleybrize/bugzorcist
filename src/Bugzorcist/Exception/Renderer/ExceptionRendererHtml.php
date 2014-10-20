@@ -14,6 +14,10 @@ namespace Bugzorcist\Exception\Renderer;
 use Bugzorcist\VarDump\VarDumpHtml;
 use Bugzorcist\Utils\UnitFormatter;
 
+/**
+ * HTML exception renderer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ExceptionRendererHtml extends ExceptionRendererAbstract
 {
     /**

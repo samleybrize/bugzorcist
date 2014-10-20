@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\DataProfiler;
 
+/**
+ * Data profiler
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class DataProfiler implements \Countable, \Iterator
 {
     /**

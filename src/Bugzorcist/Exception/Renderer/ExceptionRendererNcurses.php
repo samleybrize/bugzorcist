@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer;
 
+/**
+ * Ncurses based exception renderer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ExceptionRendererNcurses extends ExceptionRendererAbstract
 {
     const COLOR_DEFAULT             = 0;

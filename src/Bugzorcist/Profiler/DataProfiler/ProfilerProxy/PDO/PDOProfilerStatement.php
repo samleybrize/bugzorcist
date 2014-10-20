@@ -13,6 +13,10 @@ namespace Bugzorcist\Profiler\DataProfiler\ProfilerProxy\PDO;
 
 use Bugzorcist\Profiler\DataProfiler\DataProfiler;
 
+/**
+ * Extends PDOStatement to add profiling capabilities
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class PDOProfilerStatement extends \PDOStatement
 {
     /**

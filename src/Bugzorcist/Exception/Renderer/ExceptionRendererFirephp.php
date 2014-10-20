@@ -13,6 +13,10 @@ namespace Bugzorcist\Exception\Renderer;
 
 use Bugzorcist\Utils\UnitFormatter;
 
+/**
+ * FirePHP based exception renderer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ExceptionRendererFirephp extends ExceptionRendererAbstract
 {
     /**

@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses loaded extensions viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesLoadedExtensions extends NcursesAbstract
 {
     /**

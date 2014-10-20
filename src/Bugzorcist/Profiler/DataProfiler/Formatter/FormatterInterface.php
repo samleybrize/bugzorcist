@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\DataProfiler\Formatter;
 
+/**
+ * Data query text formatter interface
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 interface FormatterInterface
 {
     /**

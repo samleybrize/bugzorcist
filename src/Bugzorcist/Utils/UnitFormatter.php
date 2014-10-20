@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Utils;
 
+/**
+ * Format units
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class UnitFormatter
 {
     /**

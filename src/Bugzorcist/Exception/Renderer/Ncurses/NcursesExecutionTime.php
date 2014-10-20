@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses execution time viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesExecutionTime extends NcursesAbstract
 {
     /**

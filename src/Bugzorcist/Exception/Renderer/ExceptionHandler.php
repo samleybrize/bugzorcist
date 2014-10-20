@@ -14,6 +14,10 @@ namespace Bugzorcist\Exception\Renderer;
 use Bugzorcist\Profiler\DataProfiler\DataProfilerManager;
 use Bugzorcist\Profiler\Profiler\ProfilerManager;
 
+/**
+ * Exception handler to render uncaught exceptions
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ExceptionHandler
 {
     /**

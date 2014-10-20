@@ -14,6 +14,10 @@ namespace Bugzorcist\VarDump\Ncurses;
 use Bugzorcist\VarDump\VarDumpCliNcurses;
 use Bugzorcist\VarDump\VarTree;
 
+/**
+ * Ncurses var dump viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesVarDump implements NcursesInterface
 {
     /**

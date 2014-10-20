@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\Profiler;
 
+/**
+ * Profiler manager
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class ProfilerManager implements \Countable, \Iterator
 {
     /**

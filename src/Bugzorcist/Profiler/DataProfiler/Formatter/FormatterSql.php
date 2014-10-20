@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\DataProfiler\Formatter;
 
+/**
+ * Data query text SQL formatter
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class FormatterSql implements FormatterInterface
 {
     /**

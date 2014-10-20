@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\DataProfiler\Formatter;
 
+/**
+ * Data query text default formatter
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class FormatterDefault implements FormatterInterface
 {
     /**

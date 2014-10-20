@@ -13,6 +13,10 @@ namespace Bugzorcist\Profiler\DataProfiler\Profile;
 
 use Bugzorcist\Utils\UnitFormatter;
 
+/**
+ * Data profile
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class DataProfile implements DataProfileInterface
 {
     /**

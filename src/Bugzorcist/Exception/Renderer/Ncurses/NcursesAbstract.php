@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses viewers common functionnalities
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 abstract class NcursesAbstract
 {
     /**

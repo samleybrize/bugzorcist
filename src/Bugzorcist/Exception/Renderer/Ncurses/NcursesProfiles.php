@@ -14,6 +14,10 @@ namespace Bugzorcist\Exception\Renderer\Ncurses;
 use Bugzorcist\Profiler\Profiler\ProfilerManager;
 use Bugzorcist\VarDump\VarDumpCliNcurses;
 
+/**
+ * Ncurses profiles viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesProfiles extends NcursesVerticalCursorAbstract
 {
     /**

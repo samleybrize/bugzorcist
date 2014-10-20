@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+/**
+ * Ncurses constants viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesConstants extends NcursesVerticalCursorAbstract
 {
     /**

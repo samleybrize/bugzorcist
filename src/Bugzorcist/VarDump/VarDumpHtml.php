@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\VarDump;
 
+/**
+ * Dumps a var to HTML
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class VarDumpHtml
 {
     /**

@@ -13,6 +13,10 @@ namespace Bugzorcist\Profiler\Profiler\Profile;
 
 use Bugzorcist\Utils\UnitFormatter;
 
+/**
+ * Profile
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class Profile implements ProfileInterface
 {
     /**

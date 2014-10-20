@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\Profiler\DataProfiler\Profile;
 
+/**
+ * Data profile interface
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 interface DataProfileInterface
 {
     /**

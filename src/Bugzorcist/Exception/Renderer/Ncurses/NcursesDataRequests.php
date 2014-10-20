@@ -13,6 +13,10 @@ namespace Bugzorcist\Exception\Renderer\Ncurses;
 
 use Bugzorcist\Profiler\DataProfiler\DataProfilerManager;
 
+/**
+ * Ncurses data requests viewer
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesDataRequests extends NcursesVerticalCursorAbstract
 {
     /**

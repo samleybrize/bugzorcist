@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\VarDump\Ncurses;
 
+/**
+ * Ncurses viewer interface
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 interface NcursesInterface
 {
     /**
