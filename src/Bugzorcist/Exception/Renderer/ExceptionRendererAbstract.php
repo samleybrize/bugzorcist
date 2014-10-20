@@ -89,6 +89,42 @@ abstract class ExceptionRendererAbstract
     }
 
     /**
+     * Returns the exception
+     * @return \Exception
+     */
+    public function getException()
+    {
+        return $this->exception;
+    }
+
+    /**
+     * Returns the application config
+     * @return mixed
+     */
+    public function getApplicationConfig()
+    {
+        return $this->applicationConfig;
+    }
+
+    /**
+     * Returns the profiler manager
+     * @return \Bugzorcist\Profiler\Profiler\ProfilerManager|null
+     */
+    public function getProfilerManager()
+    {
+        return $this->profilerManager;
+    }
+
+    /**
+     * Returns the data profiler manager
+     * @return \Bugzorcist\Profiler\DataProfiler\DataProfilerManager|null
+     */
+    public function getDataProfilerManager()
+    {
+        return $this->dataProfilerManager;
+    }
+
+    /**
      * Returns the UNIX timestamp at the construction of this object
      * @return float
      */
