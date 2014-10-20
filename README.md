@@ -21,6 +21,8 @@ $renderer->render();
 
 ```
 
+Installation
+------------
 For a quick install with [Composer](https://getcomposer.org/) use:
 
     $ composer require samleybrize/bugzorcist
