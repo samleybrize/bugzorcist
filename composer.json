@@ -1,0 +1,30 @@
+{
+    "name": "samleybrize/bugzorcist",
+    "type": "library",
+    "description": "Debug library",
+    "homepage": "https://github.com/samleybrize/bugzorcist",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Stephen Berquet",
+            "email": "stephen.berquet@gmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/samleybrize/bugzorcist/issues",
+        "source": "https://github.com/samleybrize/bugzorcist"
+    },
+    "require": {
+        "php": ">=5.3.3",
+        "firephp/firephp-core": "dev-master",
+        "jdorn/sql-formatter": "1.2.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Bugzorcist\\": "src/"
+        },
+        "files": [
+            "src/init.php"
+        ]
+    }
+}
