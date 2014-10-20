@@ -130,7 +130,7 @@ abstract class ExceptionRendererAbstract
      */
     protected function getMicrotime()
     {
-        return $this->endMicrotime;
+        return $this->microtime;
     }
 
     /**

@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Bugzorcist\Exception\Render\CliNcurses;
+namespace Bugzorcist\Exception\Renderer\Ncurses;
 
 class NcursesConstants extends NcursesVerticalCursorAbstract
 {

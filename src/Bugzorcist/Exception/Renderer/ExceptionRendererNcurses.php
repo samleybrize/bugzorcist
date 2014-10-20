@@ -187,7 +187,7 @@ class ExceptionRendererNcurses extends ExceptionRendererAbstract
         ncurses_keypad($this->windowDummy, true);
 
         // create renderers
-        $executionTime                                              = $this->_endMicrotime - $_SERVER["REQUEST_TIME_FLOAT"];
+        $executionTime                                              = $this->getMicrotime() - $_SERVER["REQUEST_TIME_FLOAT"];
         $includedFiles                                              = get_included_files();
         $loadedExtensions                                           = get_loaded_extensions();
         $this->screenRendererList[self::SCREEN_DESCRIPTION]         = new Ncurses\NcursesDescription($this->getException(), 0, 2);

@@ -500,7 +500,7 @@ class ExceptionRendererHtml extends ExceptionRendererAbstract
 
                     foreach ($profiler as $numProfile => $profile) {
                         // args
-                        $args       = $this->_varDump($profile->getParams(), "args");
+                        $args       = $this->varDump($profile->getParams(), "args");
 
                         // profile stats
                         $startTime  = $profile->getStartMicrotime() - $_SERVER["REQUEST_TIME_FLOAT"];
@@ -630,7 +630,7 @@ class ExceptionRendererHtml extends ExceptionRendererAbstract
             return;
         }
 
-        return $this->cat("Application Config", $this->_varDump($this->getApplicationConfig(), "Application config"));
+        return $this->cat("Application Config", $this->varDump($this->getApplicationConfig(), "Application config"));
     }
 
     /**

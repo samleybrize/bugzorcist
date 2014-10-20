@@ -443,7 +443,7 @@ class ExceptionRendererFirephp extends ExceptionRendererAbstract
                 $this->firePhp->groupEnd();
             }
 
-            $this->_closeCat();
+            $this->closeCat();
         }
     }
 
