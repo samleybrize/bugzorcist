@@ -1,7 +1,7 @@
 {
     "name": "samleybrize/bugzorcist",
     "type": "library",
-    "description": "Debug library",
+    "description": "Set of tools to help debugging",
     "homepage": "https://github.com/samleybrize/bugzorcist",
     "license": "MIT",
     "authors": [
