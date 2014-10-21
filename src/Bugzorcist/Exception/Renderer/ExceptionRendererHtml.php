@@ -809,6 +809,9 @@ if ("undefined" == typeof jQuery) {
 }
 
 function exceptionRenderInit() {
+    // FIX: remove background-color CSS property from SQL formatted blocks
+    jQuery("pre").css("background-color", null);
+
     // exception details
     jQuery(".exceptionRenderTitle").click(function(event) {
         var element         = jQuery(event.currentTarget);
