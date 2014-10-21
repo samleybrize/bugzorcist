@@ -11,6 +11,8 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+use Bugzorcist\Exception\Renderer\ExceptionRendererNcurses;
+
 /**
  * Ncurses viewers common functionnalities
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -317,7 +319,7 @@ abstract class NcursesAbstract
     abstract protected function render();
 
     /**
-     * Prints a text. The text may contain color tags like "<<4>>" where "4" is the color number as declared by the VarDumpCliNcurses::COLOR_* constants.
+     * Prints a text. The text may contain color tags like "<<4>>" where "4" is the color number as declared by the ExceptionRendererNcurses::COLOR_* constants.
      * @param string $text text to print
      * @return int number of characters printed
      */
@@ -354,10 +356,10 @@ abstract class NcursesAbstract
     /**
      * Prints a text to the pad
      * @param string $text text to print
-     * @param int $color [optional] text color. One of the VarDumpCliNcurses::COLOR_* constants. Defaults to VarDumpCliNcurses::COLOR_DEFAULT.
+     * @param int $color [optional] text color. One of the ExceptionRendererNcurses::COLOR_* constants. Defaults to ExceptionRendererNcurses::COLOR_DEFAULT.
      * @return int number of characters printed
      */
-    protected function printRawText($text, $color = VarDumpCliNcurses::COLOR_DEFAULT)
+    protected function printRawText($text, $color = ExceptionRendererNcurses::COLOR_DEFAULT)
     {
         if ($this->internalWriteEnabled) {
             return $this->printRawTextInternal($text);

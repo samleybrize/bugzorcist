@@ -11,6 +11,8 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
+use Bugzorcist\Exception\Renderer\ExceptionRendererNcurses;
+
 /**
  * Ncurses viewers with vertical selector common functionnalities
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -146,7 +148,7 @@ abstract class NcursesVerticalCursorAbstract extends NcursesAbstract
     /**
      * {@inheritdoc}
      */
-    protected function printRawText($text, $color = VarDumpCliNcurses::COLOR_DEFAULT)
+    protected function printRawText($text, $color = ExceptionRendererNcurses::COLOR_DEFAULT)
     {
         // if the current position is pointed by the cursor, change the text color to display a white background
         $x = null;

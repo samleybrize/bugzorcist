@@ -12,7 +12,7 @@
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
 use Bugzorcist\Profiler\Profiler\ProfilerManager;
-use Bugzorcist\VarDump\VarDumpCliNcurses;
+use Bugzorcist\VarDump\VarDumpNcurses;
 
 /**
  * Ncurses profiles viewer
@@ -75,7 +75,7 @@ class NcursesProfiles extends NcursesVerticalCursorAbstract
                 // show profile params
                 if (array_key_exists($this->getCursorPositionY(), $this->profileParamsList)) {
                     $params = $this->profileParamsList[$this->getCursorPositionY()];
-                    VarDumpCliNcurses::dump($params, "Params", false);
+                    VarDumpNcurses::dump($params, "Params", false);
                     return true;
                 } else {
                     parent::onKeyPress($keyCode);

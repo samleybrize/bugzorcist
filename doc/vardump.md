@@ -46,11 +46,11 @@ Only usable from command line
 ```php
 <?php
 
-use Bugzorcist\VarDump\VarDumpCliNcurses;
+use Bugzorcist\VarDump\VarDumpNcurses;
 
 // dumps the var $var with "label" as the title
-VarDumpCliNcurses::dump($var, "label");
+VarDumpNcurses::dump($var, "label");
 
 // dumps the var $var without the stack trace
-VarDumpCliNcurses::dump($var, "label", false);
+VarDumpNcurses::dump($var, "label", false);
 ```

@@ -11,7 +11,7 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
-use Bugzorcist\VarDump\VarDumpCliNcurses;
+use Bugzorcist\VarDump\VarDumpNcurses;
 
 /**
  * Ncurses request viewer
@@ -62,7 +62,7 @@ class NcursesRequest extends NcursesVerticalCursorAbstract
             case 13:
                 $name   = $this->varPosList[$this->getCursorPositionY()];
                 $var    = $this->varList[$name];
-                VarDumpCliNcurses::dump($var, $name, false);
+                VarDumpNcurses::dump($var, $name, false);
                 return true;
                 break;
 

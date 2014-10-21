@@ -11,7 +11,7 @@
 
 namespace Bugzorcist\Exception\Renderer\Ncurses;
 
-use Bugzorcist\VarDump\VarDumpCliNcurses;
+use Bugzorcist\VarDump\VarDumpNcurses;
 
 /**
  * Ncurses application config viewer
@@ -60,7 +60,7 @@ class NcursesConfigApplication extends NcursesAbstract
         switch ($keyCode) {
             // enter
             case 13:
-                VarDumpCliNcurses::dump($this->applicationConfig, "Application Config", false);
+                VarDumpNcurses::dump($this->applicationConfig, "Application Config", false);
                 return true;
                 break;
         }

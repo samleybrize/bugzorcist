@@ -15,7 +15,7 @@ namespace Bugzorcist\VarDump;
  * Dumps a var to Ncurses
  * @author Stephen Berquet <stephen.berquet@gmail.com>
  */
-class VarDumpCliNcurses
+class VarDumpNcurses
 {
     const COLOR_DEFAULT             = 0;
     const COLOR_RED                 = 1;
