@@ -38,8 +38,6 @@ Profile
 ```php
 <?php
 
-use Bugzorcist\Profiler\DataProfiler\Formatter\FormatterSql;
-
 $profile = $dataProfiler->getProfile($identifier);
 
 // Indicates if the profile has ended
