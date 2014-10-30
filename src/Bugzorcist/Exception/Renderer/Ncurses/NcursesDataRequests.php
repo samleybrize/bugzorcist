@@ -117,9 +117,31 @@ class NcursesDataRequests extends NcursesVerticalCursorAbstract
                         }
 
                         foreach ($query->getQueryParams() as $paramName => $paramValue) {
-                            $type       = gettype($paramValue);
+                            $paramType  = "object" == gettype($paramValue) ? get_class($paramValue) : gettype($paramValue);
+
+                            switch ($paramType){
+                                case "string":
+                                case "integer":
+                                case "long":
+                                case "float":
+                                case "double":
+                                    // leave value as is
+                                    break;
+
+                                case "bool":
+                                case "boolean":
+                                    $paramValue = $paramValue ? "true" : "false";
+                                    break;
+
+                                case "null":
+                                case "NULL":
+                                case "array":
+                                default:
+                                    $paramValue = "";
+                            }
+
                             $paramName  = str_pad($paramName, $maxLength, " ", STR_PAD_RIGHT);
-                            $this->printText("        <<5>>$paramName => <<2>>($type) <<5>>$paramValue\n");
+                            $this->printText("        <<5>>$paramName => <<2>>($paramType) <<5>>$paramValue\n");
                         }
 
                         $this->printText(" \n");

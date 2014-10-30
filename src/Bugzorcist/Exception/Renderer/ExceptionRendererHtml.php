@@ -418,8 +418,31 @@ class ExceptionRendererHtml extends ExceptionRendererAbstract
 
                             // build parameters html
                             foreach ($queryParams as $paramName => $paramValue) {
+                                $paramType  = "object" == gettype($paramValue) ? get_class($paramValue) : gettype($paramValue);
+
+                                switch ($paramType){
+                                    case "string":
+                                    case "integer":
+                                    case "long":
+                                    case "float":
+                                    case "double":
+                                        // leave value as is
+                                        break;
+
+                                    case "bool":
+                                    case "boolean":
+                                        $paramValue = $paramValue ? "true" : "false";
+                                        break;
+
+                                    case "null":
+                                    case "NULL":
+                                    case "array":
+                                    default:
+                                        $paramValue = "";
+                                }
+
                                 $paramName  = str_replace(" ", "&nbsp;", str_pad($paramName, $maxKeyLength, " ", STR_PAD_RIGHT));
-                                $params    .= "<code><span>$paramName =&gt;</span> <span>(" . gettype($paramValue) . ")</span> $paramValue</code>";
+                                $params    .= "<code><span>$paramName =&gt;</span> <span>($paramType)</span> $paramValue</code>";
                             }
                         }
 
