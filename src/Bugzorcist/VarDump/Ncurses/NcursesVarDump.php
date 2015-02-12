@@ -535,9 +535,17 @@ class NcursesVarDump implements NcursesInterface
                 $this->addPosition(0, 1);
                 break;
 
+            // null
             case "null":
             case "NULL":
                 $render = "<<2>>null";
+                $this->printText($render);
+                $this->addPosition(0, 1);
+                break;
+
+            // resource
+            case "resource":
+                $render = "<<4>>resource<<0>>({$tree["value"]})";
                 $this->printText($render);
                 $this->addPosition(0, 1);
                 break;

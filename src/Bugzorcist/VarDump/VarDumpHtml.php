@@ -126,9 +126,15 @@ class VarDumpHtml
                 $render = "<span class='debugVarType'>bool</span>(<span class='debugKeyword'>{$tree["value"]}</span>)";
                 break;
 
+            // null
             case "null":
             case "NULL":
                 $render = "<span class='debugKeyword'>null</span>";
+                break;
+
+            // resource
+            case "resource":
+                $render = "<span class='debugVarType'>resource</span>({$tree["value"]})";
                 break;
 
             // array
