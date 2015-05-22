@@ -122,7 +122,7 @@ class PDOProfiler extends \PDO
     /**
      * {@inheritdoc}
      */
-    public function prepare()
+    public function prepare($statement, $options = null)
     {
         return $this->__call("prepare", func_get_args());
     }
@@ -146,7 +146,7 @@ class PDOProfiler extends \PDO
     /**
      * {@inheritdoc}
      */
-    public function getAttribute()
+    public function getAttribute($attribute)
     {
         return $this->__call("getAttribute", func_get_args());
     }
@@ -162,7 +162,7 @@ class PDOProfiler extends \PDO
     /**
      * {@inheritdoc}
      */
-    public function lastInsertId()
+    public function lastInsertId($seqname = null)
     {
         return $this->__call("lastInsertId", func_get_args());
     }
@@ -170,7 +170,7 @@ class PDOProfiler extends \PDO
     /**
      * {@inheritdoc}
      */
-    public function quote()
+    public function quote($string, $paramtype = null)
     {
         return $this->__call("quote", func_get_args());
     }
@@ -178,7 +178,7 @@ class PDOProfiler extends \PDO
     /**
      * {@inheritdoc}
      */
-    public function setAttribute()
+    public function setAttribute($attribute, $value)
     {
         return $this->__call("setAttribute", func_get_args());
     }

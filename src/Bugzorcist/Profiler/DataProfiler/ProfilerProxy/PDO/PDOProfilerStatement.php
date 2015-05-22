@@ -79,7 +79,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function execute(array $input_parameters = null)
+    public function execute($input_parameters = null)
     {
         $parameters = (null === $input_parameters) ? $this->binds : $input_parameters;
 
@@ -141,7 +141,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function fetch()
+    public function fetch($how = null, $orientation = null, $offset = null)
     {
         return $this->__call("fetch", func_get_args());
     }
@@ -149,7 +149,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function fetchAll()
+    public function fetchAll($how = null, $class_name = null, $ctor_args = null)
     {
         return $this->__call("fetchAll", func_get_args());
     }
@@ -157,7 +157,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function fetchColumn()
+    public function fetchColumn($column_number = null)
     {
         return $this->__call("fetchColumn", func_get_args());
     }
@@ -165,7 +165,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function fetchObject()
+    public function fetchObject($class_name = null, $ctor_args = null)
     {
         return $this->__call("fetchObject", func_get_args());
     }
@@ -173,7 +173,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function getAttribute()
+    public function getAttribute($attribute)
     {
         return $this->__call("getAttribute", func_get_args());
     }
@@ -181,7 +181,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function getColumnMeta()
+    public function getColumnMeta($column)
     {
         return $this->__call("getColumnMeta", func_get_args());
     }
@@ -205,7 +205,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function setAttribute()
+    public function setAttribute($attribute, $value)
     {
         return $this->__call("setAttribute", func_get_args());
     }
@@ -213,7 +213,7 @@ class PDOProfilerStatement extends \PDOStatement
     /**
      * {@inheritdoc}
      */
-    public function setFetchMode()
+    public function setFetchMode($mode, $params = null)
     {
         return $this->__call("setFetchMode", func_get_args());
     }
