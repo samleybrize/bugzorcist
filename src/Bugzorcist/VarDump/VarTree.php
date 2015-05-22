@@ -79,10 +79,15 @@ class VarTree
                 $level["value"] = $var ? "true" : "false";
                 break;
 
-            // array
+            // null
             case "null":
             case "NULL":
                 $level["value"] = null;
+                break;
+
+            // resource
+            case "resource":
+                $level["value"] = (string) $var;
                 break;
 
             // array
