@@ -110,27 +110,46 @@ class VarTree
                 }
 
                 $this->objectList[]     = $var;
-                $reflection             = new \ReflectionObject($var);
-                $propertyList           = $reflection->getProperties();
                 $level["class"]         = get_class($var);
-                $level["count"]         = count($propertyList);
+                $level["count"]         = 0;
                 $level["properties"]    = array();
+                $propertyHashList       = array();
                 $hasStaticProperty      = false;
+                $isParentClass          = false;
+                $reflection             = new \ReflectionObject($var);
 
-                foreach ($propertyList as $property) {
-                    $property->setAccessible(true);
-                    $level["properties"][] = array(
-                        "static"    => $property->isStatic(),
-                        "access"    => $property->isPrivate() ? "private" : $property->isProtected() ? "protected" : "public",
-                        "name"      => $property->getName(),
-                        "value"     => $this->makeTree($property->getValue($var)),
-                    );
+                do {
+                    $propertyList = $reflection->getProperties();
 
-                    // whether this object has static property or not
-                    if (!$hasStaticProperty) {
-                        $hasStaticProperty = $property->isStatic();
+                    foreach ($propertyList as $property) {
+                        // avoid getting duplicate properties
+                        $hash = ((int) $property->isStatic()) . "#" . $reflection->getName() . "#" . $property->getName();
+
+                        if (in_array($hash, $propertyHashList)) {
+                            continue;
+                        }
+
+                        $propertyHashList[] = $hash;
+
+                        // add property definition
+                        $property->setAccessible(true);
+                        $level["count"]++;
+                        $level["properties"][] = array(
+                            "static"    => $property->isStatic(),
+                            "access"    => $property->isPrivate() ? "private" : ($property->isProtected() ? "protected" : "public"),
+                            "name"      => $property->getName(),
+                            "class"     => $isParentClass ? $reflection->getName() : null,
+                            "value"     => $this->makeTree($property->getValue($var)),
+                        );
+    
+                        // whether this object has static property or not
+                        if (!$hasStaticProperty) {
+                            $hasStaticProperty = $property->isStatic();
+                        }
                     }
-                }
+
+                    $isParentClass = true;
+                } while ($reflection = $reflection->getParentClass());
 
                 // if this object has a static property, properties are sorted (static properties first)
                 if ($hasStaticProperty) {

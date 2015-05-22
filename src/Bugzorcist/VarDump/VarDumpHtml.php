@@ -171,9 +171,10 @@ class VarDumpHtml
                 $render    .= "<span class='debugDetails'>";
 
                 foreach ($tree["properties"] as $k => $v) {
+                    $class      = $v["class"] ? "<span class='debugClassName'>{$v["class"]}:</span>" : "";
                     $key        = $v["static"] ?
                         "<span class='debugStatic'>static:</span><span class='debugAccess'>{$v["access"]}:</span>{$v["name"]}" :
-                        "<span class='debugAccess'>{$v["access"]}:</span>{$v["name"]}"
+                        "<span class='debugAccess'>{$v["access"]}:</span>{$class}{$v["name"]}"
                     ;
                     $render    .= "\n$pad    [$key] = " . self::renderVar($v["value"], $level + 1);
                 }
