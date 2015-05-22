@@ -1,0 +1,11 @@
+services:
+    bugzorcist.data_profiler_manager:
+        class: Bugzorcist\Profiler\DataProfiler\DataProfilerManager
+
+    bugzorcist.data_collector:
+        class: Bugzorcist\Symfony\Bundle\DataCollector\BugzorcistDataCollector
+        arguments:
+            - "@bugzorcist.data_profiler_manager"
+            - "@kernel"
+        tags:
+            - { name: data_collector, template: "BugzorcistBundle:Collector:data-source.html.twig", id: "bugzorcist-data-source" }

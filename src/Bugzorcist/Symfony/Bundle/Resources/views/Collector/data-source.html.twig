@@ -1,0 +1,200 @@
+{% extends app.request.isXmlHttpRequest ? 'WebProfilerBundle:Profiler:ajax_layout.html.twig' : 'WebProfilerBundle:Profiler:layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        <img width="20" height="28" alt="Database" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAcCAYAAABh2p9gAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQRJREFUeNpi/P//PwM1ARMDlcGogZQDlpMnT7pxc3NbA9nhQKxOpL5rQLwJiPeBsI6Ozl+YBOOOHTv+AOllQNwtLS39F2owKYZ/gRq8G4i3ggxEToggWzvc3d2Pk+1lNL4fFAs6ODi8JzdS7mMRVyDVoAMHDsANdAPiOCC+jCQvQKqBQB/BDbwBxK5AHA3E/kB8nKJkA8TMQBwLxaBIKQbi70AvTADSBiSadwFXpCikpKQU8PDwkGTaly9fHFigkaKIJid4584dkiMFFI6jkTJII0WVmpHCAixZQEXWYhDeuXMnyLsVlEQKI45qFBQZ8eRECi4DBaAlDqle/8A48ip6gAADANdQY88Uc0oGAAAAAElFTkSuQmCC" />
+        <span class="sf-toolbar-status">{{ collector.queryCount }}</span>
+    {% endset %}
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>Queries</b>
+            <span>{{ collector.queryCount }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Query time</b>
+            <span>{{ '%0.3f'|format(collector.queryTime) }} ms</span>
+        </div>
+    {% endset %}
+    {% include 'WebProfilerBundle:Profiler:toolbar_item.html.twig' with { 'link': profiler_url } %}
+{% endblock %}
+
+{% block menu %}
+<span class="label">
+    <span class="icon"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAcCAYAAAB/E6/TAAABLUlEQVR42u3TP0vDQBiA8UK/gDiLzi0IhU4OEunk5OQUAhGSOBUCzqWfIKSzX8DRySF0URCcMjWLIJjFD9Cpk/D6HITecEPUuzhIAz8CIdyTP/f2iqI4qaqqDx8l5Ic2uIeP/bquezCokOAFF+oCN3t4gPzSEjc4NEPaCldQbzjELTYW0RJzHDchwwem+ons6ZBpLSJ7nueJC22h0V+FzmwWV0ee59vQNV67CGVZJmEYbkNjfpY6X6I0Qo4/3RMmTdDDspuQVsJvgkP3IdMbIkIjLPBoadG2646iKJI0Ta2wxm6OdnP0/Tk6DYJgHcfxpw21RtscDTDDnaVZ26474GkkSRIrrPEv5sgMTfHe+cA2O6wPH6vOBpYQNALneHb96XTEDI6dzpEZ0VzO0Rf3pP5LMLI4tAAAAABJRU5ErkJggg==" alt="" /></span>
+    <strong>Data sources</strong>
+    <span class="count">
+        <span>{{ collector.queryCount }}</span>
+        <span>{{ '%0.0f'|format(collector.queryTime * 1000) }} s</span>
+    </span>
+</span>
+{% endblock %}
+
+{% block panel %}
+    {{ block('queries') }}
+{% endblock %}
+
+{% block queries %}
+    <h2>Bugzorcist</h2>
+
+    <h2>Data sources</h2>
+
+    {% for name, dataSource in collector.dataSources %}
+        <h3 class="sf-panel-bugzorcist-dataprofiler-title" onclick="toggleDataSource('{{ name }}');">
+            {{ name }}
+            <em>
+                ({{ dataSource.queryCount }} profile{% if dataSource.queryCount > 1 %}s{% endif %}
+                | total execution time : {{ dataSource.queryTime }} s)
+            </em>
+            &rtrif;
+        </h3>
+        <div class="sf-panel-bugzorcist-dataprofiler" id="datasource-{{ name }}">
+            {% if 0 == dataSource.queryCount %}
+                <p>
+                    <em>No queries.</em>
+                </p>
+            {% else %}
+                <table class="alt" id="queriesPlaceholder-{{ loop.index }}">
+                    <thead>
+                        <tr>
+                            <th onclick="javascript:sortTable(this, 0, 'queries-{{ loop.index }}')" data-sort-direction="-1" style="cursor: pointer;">#<span>&#9650;</span></th>
+                            <th onclick="javascript:sortTable(this, 1, 'queries-{{ loop.index }}')" style="cursor: pointer;">Time<span></span></th>
+                            <th style="width: 100%;">Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queries-{{ loop.index }}">
+                        {% for i, profile in dataSource.profiles %}
+                            <tr id="queryNo-{{ i }}-{{ loop.parent.loop.index }}" class="{{ cycle(['odd', 'even'], i) }}">
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    {% if false != profile.queryTime %}
+                                        {{ '%0.5f'|format(profile.queryTime) }} ms
+                                    {% else %}
+                                        <em>Not ended</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="sf-panel-bugzorcist-query-text">
+                                        <code>{{ profile.queryText|raw }}</code>
+                                    </div>
+                                    <div class="sf-panel-bugzorcist-query-params">
+                                        {% for param in profile.params %}
+                                            <code>
+                                                <span>{{ param.name|replace({' ': '&nbsp;'})|raw }} =&gt;</span>
+                                                <span>({{ param.type }})</span>
+                                                {{ param.value }}
+                                            </code>
+                                            <br/>
+                                        {% endfor %}
+                                    </div>
+
+                                    <table class="sf-panel-bugzorcist-query-details">
+                                        <thead>
+                                            <tr>
+                                                <th colspan="2">Execution time</th>
+                                                <th colspan="2">Memory usage</th>
+                                                <th colspan="2">Memory peak usage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Started at</td><td>{{ '%0.6f'|format(profile.startTime) }} s</td>
+                                                <td>Start</td><td>{{ profile.startMemoryUsage }}</td>
+                                                <td>Start</td><td>{{ profile.startPeakMemoryUsage }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Ended at</td><td>{% if false != profile.endTime %}{{ '%0.6f'|format(profile.endTime) }} s{% else %}-{% endif %}</td>
+                                                <td>End</td><td>{% if false != profile.endMemoryUsage %}{{ profile.endMemoryUsage }}{% else %}-{% endif %}</td>
+                                                <td>End</td><td>{% if false != profile.endPeakMemoryUsage %}{{ profile.endPeakMemoryUsage }}{% else %}-{% endif %}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Execution time</td><td>{% if false != profile.queryTime %}{{ '%0.6f'|format(profile.queryTime) }} s{% else %}-{% endif %}</td>
+                                                <td>&nbsp;</td><td>&nbsp;</td>
+                                                <td>&nbsp;</td><td>&nbsp;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <style>
+    .sf-panel-bugzorcist-dataprofiler {
+        display: none;
+    }
+    .sf-panel-bugzorcist-dataprofiler-title {
+        cursor:pointer;
+    }
+    .sf-panel-bugzorcist-dataprofiler-title em {
+        color: #9d9d9d;
+    }
+    .sf-panel-bugzorcist-query-text code {
+        font-size: 12px;
+    }
+    .sf-panel-bugzorcist-query-params {
+        margin-top: 15px;
+    }
+    .sf-panel-bugzorcist-query-params code span:nth-child(1) {
+        color: magenta;
+    }
+    .sf-panel-bugzorcist-query-params code span:nth-child(2) {
+        color: darkorange;
+    }
+    .sf-panel-bugzorcist-query-details {
+        margin-top: 15px;
+        margin-bottom: 2px;
+    }
+    </style>
+
+    <script>//<![CDATA[
+    function sortTable(header, column, targetId) {
+        "use strict";
+
+        var direction   = parseInt(header.getAttribute("data-sort-direction")) || 1;
+        var items       = [];
+        var target      = document.getElementById(targetId);
+        var rows        = target.children;
+        var headers     = header.parentElement.children;
+        var i;
+
+        for (i = 0; i < rows.length; ++i) {
+            items.push(rows[i]);
+        }
+
+        for (i = 0; i < headers.length; ++i) {
+            headers[i].removeAttribute("data-sort-direction");
+
+            if (headers[i].children.length > 0) {
+                headers[i].children[0].innerHTML = "";
+            }
+        }
+
+        header.setAttribute("data-sort-direction", (-1*direction).toString());
+        header.children[0].innerHTML = direction > 0 ? "&#9650;" : "&#9660;";
+
+        items.sort(function(a, b) {
+            return direction*(parseFloat(a.children[column].innerHTML) - parseFloat(b.children[column].innerHTML));
+        });
+
+        for (i = 0; i < items.length; ++i) {
+            Sfjs.removeClass(items[i], i % 2 ? "even" : "odd");
+            Sfjs.addClass(items[i], i % 2 ? "odd" : "even");
+            target.appendChild(items[i]);
+        }
+    }
+
+    function toggleDataSource(name) {
+        var target = document.getElementById("datasource-" + name);
+
+        if ("none" === target.style.display || "" === target.style.display) {
+            target.style.display = "block";
+        } else {
+            target.style.display = "none";
+        }
+    }
+    //]]></script>
+{% endblock %}
