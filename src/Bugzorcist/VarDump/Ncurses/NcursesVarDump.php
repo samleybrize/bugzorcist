@@ -616,8 +616,9 @@ class NcursesVarDump implements NcursesInterface
                     foreach ($tree["properties"] as $k => $v) {
                         $this->setPositionX(0);
 
+                        $class      = $v["class"] ? "<<5>>{$v["class"]}:<<0>>" : "";
                         $key        = $v["static"] ?
-                            "<<2>>static:<<3>>{$v["access"]}:<<0>>{$v["name"]}" :
+                            "<<2>>static:<<3>>{$v["access"]}:<<0>>{$class}{$v["name"]}" :
                             "<<3>>{$v["access"]}:<<0>>{$v["name"]}"
                         ;
                         $render     = "$pad    [$key] = ";
