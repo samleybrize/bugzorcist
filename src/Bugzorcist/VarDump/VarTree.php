@@ -117,13 +117,14 @@ class VarTree
                 $hasStaticProperty      = false;
                 $isParentClass          = false;
                 $reflection             = new \ReflectionObject($var);
+                $classname              = $reflection->getName();
 
                 do {
                     $propertyList = $reflection->getProperties();
 
                     foreach ($propertyList as $property) {
                         // avoid getting duplicate properties
-                        $hash = ((int) $property->isStatic()) . "#" . $reflection->getName() . "#" . $property->getName();
+                        $hash = ((int) $property->isStatic()) . "#$classname#" . $property->getName();
 
                         if (in_array($hash, $propertyHashList)) {
                             continue;
