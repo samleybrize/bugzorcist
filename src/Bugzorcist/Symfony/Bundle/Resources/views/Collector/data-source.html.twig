@@ -12,7 +12,7 @@
         </div>
         <div class="sf-toolbar-info-piece">
             <b>Query time</b>
-            <span>{{ '%0.3f'|format(collector.queryTime) }} ms</span>
+            <span>{{ '%0.3f'|format(collector.queryTime * 1000) }} ms</span>
         </div>
     {% endset %}
     {% include 'WebProfilerBundle:Profiler:toolbar_item.html.twig' with { 'link': profiler_url } %}
@@ -24,7 +24,7 @@
     <strong>Data sources</strong>
     <span class="count">
         <span>{{ collector.queryCount }}</span>
-        <span>{{ '%0.0f'|format(collector.queryTime * 1000) }} s</span>
+        <span>{{ '%0.0f'|format(collector.queryTime * 1000) }} ms</span>
     </span>
 </span>
 {% endblock %}
@@ -43,7 +43,7 @@
             {{ name }}
             <em>
                 ({{ dataSource.queryCount }} profile{% if dataSource.queryCount > 1 %}s{% endif %}
-                | total execution time : {{ dataSource.queryTime }} s)
+                | total execution time : {{ '%0.6f'|format(dataSource.queryTime) }} s)
             </em>
             &rtrif;
         </h3>
