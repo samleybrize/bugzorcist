@@ -114,13 +114,13 @@ class VarTree
                 $level["count"]         = 0;
                 $level["properties"]    = array();
                 $propertyHashList       = array();
-                $hasStaticProperty      = false;
                 $isParentClass          = false;
                 $reflection             = new \ReflectionObject($var);
                 $classname              = $reflection->getName();
 
                 do {
                     $propertyList = $reflection->getProperties();
+                    usort($propertyList, array($this, "sortClassProperties"));
 
                     foreach ($propertyList as $property) {
                         // avoid getting duplicate properties
@@ -142,20 +142,10 @@ class VarTree
                             "class"     => $isParentClass ? $reflection->getName() : null,
                             "value"     => $this->makeTree($property->getValue($var)),
                         );
-    
-                        // whether this object has static property or not
-                        if (!$hasStaticProperty) {
-                            $hasStaticProperty = $property->isStatic();
-                        }
                     }
 
                     $isParentClass = true;
                 } while ($reflection = $reflection->getParentClass());
-
-                // if this object has a static property, properties are sorted (static properties first)
-                if ($hasStaticProperty) {
-                    usort($level["properties"], array($this, "sortClassProperties"));
-                }
                 break;
 
             // unknown type
@@ -168,12 +158,12 @@ class VarTree
 
     /**
      * Callback function for usort() to sort class properties
-     * @param array $property1
-     * @param array $property2
+     * @param \ReflectionProperty $property1
+     * @param \ReflectionProperty $property2
      * @return number
      */
-    protected function sortClassProperties(array $property1, array $property2)
+    protected function sortClassProperties(\ReflectionProperty $property1, \ReflectionProperty $property2)
     {
-        return $property1["static"] && !$property2["static"] ? -1 : 1;
+        return $property1->isStatic() && !$property2->isStatic() ? -1 : 1;
     }
 }
