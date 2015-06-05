@@ -109,8 +109,8 @@ class ExceptionRendererHtml extends ExceptionRendererAbstract
             $first      = false;
         }
 
-        $this->outputCss();
-        $this->outputJs();
+        $content .= $this->getCss();
+        $content .= $this->getJs();
         echo $content;
     }
 
@@ -711,16 +711,17 @@ class ExceptionRendererHtml extends ExceptionRendererAbstract
     }
 
     /**
-     * Outputs CSS styles
+     * Returns CSS styles
+     * @return string
      */
-    protected function outputCss()
+    protected function getCss()
     {
         if (self::$cssOutput) {
             return;
         }
 
         self::$cssOutput = true;
-        echo <<<CSS
+        return <<<CSS
 <style type="text/css">
 .exceptionRender{font-family:sans-serif;font-size:13px;margin-bottom:15px}
 .exceptionRenderTitle{cursor:pointer;background:#fce1e1;border:1px solid darkorange;border-left-width:4px;border-bottom:none;display:block;padding:5px;border-top-left-radius:2px;border-top-right-radius:2px;color:red;font-weight:bold}
@@ -810,16 +811,17 @@ CSS;
     }
 
     /**
-     * Outputs JS scripts
+     * Returns JS scripts
+     * @return string
      */
-    protected function outputJs()
+    protected function getJs()
     {
         if (self::$jsOutput) {
             return;
         }
 
         self::$jsOutput = true;
-        echo <<<JAVASCRIPT
+        return <<<JAVASCRIPT
 <script type="text/javascript">
 if ("undefined" == typeof jQuery) {
     var fileref = document.createElement("script");
