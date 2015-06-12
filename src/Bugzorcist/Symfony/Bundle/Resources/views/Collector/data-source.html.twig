@@ -67,7 +67,7 @@
                                 <td>{{ loop.index }}</td>
                                 <td>
                                     {% if false != profile.queryTime %}
-                                        {{ '%0.5f'|format(profile.queryTime) }} ms
+                                        {{ '%0.5f'|format(profile.queryTime) }} s
                                     {% else %}
                                         <em>Not ended</em>
                                     {% endif %}
