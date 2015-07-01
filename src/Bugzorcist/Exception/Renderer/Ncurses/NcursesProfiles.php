@@ -51,7 +51,11 @@ class NcursesProfiles extends NcursesVerticalCursorAbstract
         $this->profilerManager  = $profilerManager;
         $this->startMicrotime   = $startMicrotime;
 
-        foreach ($this->profilerManager as $idProfiler => $profiler) {
+        if (null === $profilerManager) {
+            return;
+        }
+
+        foreach ($profilerManager as $idProfiler => $profiler) {
             $this->addExpandableElement($idProfiler);
         }
     }

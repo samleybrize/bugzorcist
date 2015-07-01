@@ -44,7 +44,11 @@ class NcursesDataRequests extends NcursesVerticalCursorAbstract
         $this->dataProfilerManager  = $dataProfilerManager;
         $this->startMicrotime       = $startMicrotime;
 
-        foreach ($this->dataProfilerManager as $idProfiler => $profiler) {
+        if (null === $dataProfilerManager) {
+            return;
+        }
+
+        foreach ($dataProfilerManager as $idProfiler => $profiler) {
             $this->addExpandableElement($idProfiler);
         }
     }
