@@ -280,12 +280,27 @@ class NcursesVarDump implements NcursesInterface
                 // expand array/object/string
                 if (array_key_exists($this->highlightedPositionY, $this->expandableList) &&
                         array_key_exists("expanded", $this->expandableList[$this->highlightedPositionY])) {
-                    if (array_key_exists("clone", $this->expandableList[$this->highlightedPositionY]) && $this->expandableList[$this->highlightedPositionY]["clone"]) {
+                    $element = $this->expandableList[$this->highlightedPositionY];
+
+                    if (array_key_exists("clone", $element) && $element["clone"]) {
                         // cloned element
-                        // TODO
+                        // expand all elements from referenced object to root
+                        if (!$this->expandFromObjectToRoot($element["id"], $this->varTree)) {
+                            return;
+                        }
+
+                        $this->refresh();
+
+                        // find found object's new y position
+                        $dstY = $this->getObjectPositionY($element["id"]);
+
+                        // goto to y position
+                        if (false !== $dstY) {
+                            $this->gotoPositionY($dstY);
+                        }
                     } else {
                         // regular element
-                        $this->expandableList[$this->highlightedPositionY]["expanded"] = !$this->expandableList[$this->highlightedPositionY]["expanded"];
+                        $this->expandableList[$this->highlightedPositionY]["expanded"] = !$element["expanded"];
 
                         // if the selected line is not the first line of the element, go up until the first line
                         if ($this->cursorPositionY != $this->highlightedPositionY) {
@@ -857,5 +872,84 @@ class NcursesVarDump implements NcursesInterface
         }
 
         return false;
+    }
+
+    /**
+     * Expands an object and all of its ancestors
+     * @param string $idObject object identifier
+     * @param array $tree tree to search in
+     * @return boolean
+     */
+    protected function expandFromObjectToRoot($idObject, array &$tree)
+    {
+        $found = false;
+
+        if ("object" == $tree["type"] && !$tree["clone"]) {
+            // check if it is the searched object
+            if ($idObject === $tree["id"]) {
+                // object found
+                $found = true;
+            } else {
+                // explore child elements
+                foreach ($tree["properties"] as &$property) {
+                    if ($this->expandFromObjectToRoot($idObject, $property)) {
+                        $found = true;
+                        break;
+                    }
+                }
+            }
+        } elseif ("array" == $tree["type"]) {
+            // explore child elements
+            foreach ($tree["children"] as &$child) {
+                if ($this->expandFromObjectToRoot($idObject, $child)) {
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        // expand if object found in one of its child elements
+        if ($found) {
+            $tree["expanded"] = true;
+        }
+
+        return $found;
+    }
+
+    /**
+     * Returns the Y position of an object
+     * @param string $idObject object identifier
+     */
+    protected function getObjectPositionY($idObject)
+    {
+        // use $this->expandableList
+        foreach ($this->expandableList as $y => $expandable) {
+            if ("object" !== $expandable["type"] || $idObject !== $expandable["id"] || $expandable["clone"]) {
+                continue;
+            }
+
+            return $y;
+        }
+
+        return false;
+    }
+
+    /**
+     * Move the cursor to the specified Y position
+     * @param int $posY
+     */
+    protected function gotoPositionY($posY)
+    {
+        if ($this->highlightedPositionY > $posY) {
+            // go up
+            while ($this->highlightedPositionY > $posY) {
+                $this->onKeyPress(NCURSES_KEY_UP);
+            }
+        } elseif ($this->highlightedPositionY < $posY) {
+            // go down
+            while ($this->highlightedPositionY < $posY) {
+                $this->onKeyPress(NCURSES_KEY_DOWN);
+            }
+        }
     }
 }
