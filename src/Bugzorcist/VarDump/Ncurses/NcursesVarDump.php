@@ -280,14 +280,20 @@ class NcursesVarDump implements NcursesInterface
                 // expand array/object/string
                 if (array_key_exists($this->highlightedPositionY, $this->expandableList) &&
                         array_key_exists("expanded", $this->expandableList[$this->highlightedPositionY])) {
-                    $this->expandableList[$this->highlightedPositionY]["expanded"] = !$this->expandableList[$this->highlightedPositionY]["expanded"];
+                    if (array_key_exists("clone", $this->expandableList[$this->highlightedPositionY]) && $this->expandableList[$this->highlightedPositionY]["clone"]) {
+                        // cloned element
+                        // TODO
+                    } else {
+                        // regular element
+                        $this->expandableList[$this->highlightedPositionY]["expanded"] = !$this->expandableList[$this->highlightedPositionY]["expanded"];
 
-                    // if the selected line is not the first line of the element, go up until the first line
-                    if ($this->cursorPositionY != $this->highlightedPositionY) {
-                        $up = $this->cursorPositionY - $this->highlightedPositionY;
+                        // if the selected line is not the first line of the element, go up until the first line
+                        if ($this->cursorPositionY != $this->highlightedPositionY) {
+                            $up = $this->cursorPositionY - $this->highlightedPositionY;
 
-                        for ($i = 0; $i < $up; $i++) {
-                            $this->onKeyPress(259);
+                            for ($i = 0; $i < $up; $i++) {
+                                $this->onKeyPress(259);
+                            }
                         }
                     }
                 }
@@ -566,7 +572,6 @@ class NcursesVarDump implements NcursesInterface
                 $this->printText($render);
                 $this->addPosition(0, 1);
 
-                // TODO when an object instance appears recursively and $this->internalWriteEnabled = true, infinite loop (ex: $a->b = $a)
                 if ($tree["expanded"] || $this->internalWriteEnabled) {
                     foreach ($tree["children"] as $k => $v) {
                         $this->setPositionX(0);
@@ -592,7 +597,11 @@ class NcursesVarDump implements NcursesInterface
                         $tree[$k] = $v;
                     }
 
-                    $tree["expanded"] = false;
+                    $tree["clone"]      = true;
+                    $tree["expanded"]   = false;
+                } elseif (!array_key_exists("clone", $tree)) {
+                    // mark as not cloned
+                    $tree["clone"]      = false;
                 }
 
                 // make expandable
@@ -606,13 +615,14 @@ class NcursesVarDump implements NcursesInterface
                 $this->objectIdList[$tree["id"]] = $tree;
 
                 $pad        = str_repeat(" ", $level * 4);
+                $rightArrow = $tree["clone"] ? ">>" : "▸";
                 $render     = "<<4>>object<<0>>(<<5>>{$tree["class"]}<<0>>)";
                 $render    .= "<<6>>#{$tree["id"]} <<0>>(<<1>>{$tree["count"]}<<0>>) ";
-                $render    .= $tree["expanded"] ? "▾" : "▸";
+                $render    .= ($tree["expanded"] && !$tree["clone"]) ? "▾" : $rightArrow;
                 $this->printText($render);
                 $this->addPosition(0, 1);
 
-                if ($tree["expanded"] || $this->internalWriteEnabled) {
+                if (($tree["expanded"] || $this->internalWriteEnabled) && !$tree["clone"]) {
                     foreach ($tree["properties"] as $k => $v) {
                         $this->setPositionX(0);
 
