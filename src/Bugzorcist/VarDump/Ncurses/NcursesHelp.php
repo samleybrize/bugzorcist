@@ -270,8 +270,9 @@ class NcursesHelp implements NcursesInterface
     {
         $help = array(
             "Var dump" => array(
-                "F5"                => "collapse all",
-                "F6"                => "expand all visible elements",
+                "F5"                => "Collapse all",
+                "F6"                => "Expand all visible elements",
+                "F7"                => "Expand all",
                 "F8"                => "Toggle highlighting",
                 "Enter"             => "Expand/collapse highlighted element",
                 "Up/down arrow"     => "Move the cursor vertically",

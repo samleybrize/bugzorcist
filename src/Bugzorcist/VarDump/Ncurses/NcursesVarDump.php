@@ -286,6 +286,12 @@ class NcursesVarDump implements NcursesInterface
                 }
                 break;
 
+            // F7
+            case NCURSES_KEY_F7:
+                // expand all elements
+                $this->expandAll($this->varTree);
+                break;
+
             // F8
             case NCURSES_KEY_F8:
                 // toggle cursor highlight
@@ -632,16 +638,9 @@ class NcursesVarDump implements NcursesInterface
             case "object":
                 // if this object instance has already been processed, we copy it
                 if (!array_key_exists("class", $tree) && array_key_exists($tree["id"], $this->objectIdList)) {
-                    $ref = $this->objectIdList[$tree["id"]];
-
-                    foreach ($ref as $k => $v) {
-                        if ("uid" === $k) {
-                            continue;
-                        }
-
-                        $tree[$k] = $v;
-                    }
-
+                    $ref                = $this->objectIdList[$tree["id"]];
+                    $tree["class"]      = $ref["class"];
+                    $tree["count"]      = $ref["count"];
                     $tree["clone"]      = true;
                     $tree["expanded"]   = false;
                 } elseif (!array_key_exists("clone", $tree)) {
@@ -962,7 +961,7 @@ class NcursesVarDump implements NcursesInterface
             } else {
                 // explore child elements
                 foreach ($tree["properties"] as &$property) {
-                    if ($this->expandFromReferencedObjectToRoot($idObject, $property)) {
+                    if ($this->expandFromReferencedObjectToRoot($idObject, $property["value"])) {
                         $found = true;
                         break;
                     }
@@ -984,6 +983,31 @@ class NcursesVarDump implements NcursesInterface
         }
 
         return $found;
+    }
+
+    /**
+     * Expands all elements
+     * @param array $tree tree to expand
+     */
+    protected function expandAll(array &$tree)
+    {
+        if ("object" == $tree["type"] && !$tree["clone"]) {
+            // object type
+            $tree["expanded"] = true;
+
+            // explore child elements
+            foreach ($tree["properties"] as &$property) {
+                $this->expandAll($property["value"]);
+            }
+        } elseif ("array" == $tree["type"]) {
+            // array type
+            $tree["expanded"] = true;
+
+            // explore child elements
+            foreach ($tree["children"] as &$child) {
+                $this->expandAll($child);
+            }
+        }
     }
 
     /**
