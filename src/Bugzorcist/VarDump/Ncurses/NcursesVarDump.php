@@ -274,6 +274,8 @@ class NcursesVarDump implements NcursesInterface
                 foreach ($this->expandableList as $k => $tree) {
                     $this->expandableList[$k]["expanded"] = false;
                 }
+
+                $this->gotoPositionY(0);
                 break;
 
             // F6
