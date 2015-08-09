@@ -20,6 +20,9 @@ use Bugzorcist\VarDump\VarTree;
  */
 class NcursesVarDump implements NcursesInterface
 {
+    const COLOR_REF_OBJECT_SRC = 26;
+    const COLOR_REF_OBJECT_DST = 27;
+
     /**
      * Var tree
      * @var array
@@ -163,6 +166,18 @@ class NcursesVarDump implements NcursesInterface
     );
 
     /**
+     * UID of last clicked clone object
+     * @var string
+     */
+    private $cloneObjectUidSrc;
+
+    /**
+     * UID of last clicked clone object's referenced object
+     * @var string
+     */
+    private $cloneObjectUidDst;
+
+    /**
      * Constructor
      * @param mixed $var var to dump
      * @param int $padPositionX x position of the pad in the main screen
@@ -285,7 +300,8 @@ class NcursesVarDump implements NcursesInterface
                     if (array_key_exists("clone", $element) && $element["clone"]) {
                         // cloned element
                         // expand all elements from referenced object to root
-                        if (!$this->expandFromObjectToRoot($element["id"], $this->varTree)) {
+
+                        if (!$this->expandFromReferencedObjectToRoot($element["id"], $this->varTree)) {
                             return;
                         }
 
@@ -298,6 +314,10 @@ class NcursesVarDump implements NcursesInterface
                         if (false !== $dstY) {
                             $this->gotoPositionY($dstY);
                         }
+
+                        // hold UIDs for highlighting
+                        $this->cloneObjectUidSrc = $element["uid"];
+                        $this->cloneObjectUidDst = $this->findReferencedObject($element["id"], $this->varTree);
                     } else {
                         // regular element
                         $this->expandableList[$this->highlightedPositionY]["expanded"] = !$element["expanded"];
@@ -464,6 +484,10 @@ class NcursesVarDump implements NcursesInterface
     {
         if (null === $this->pad) {
             $this->createPad();
+            ncurses_init_pair(self::COLOR_REF_OBJECT_SRC, NCURSES_COLOR_BLACK, NCURSES_COLOR_YELLOW);
+            ncurses_init_pair(self::COLOR_REF_OBJECT_SRC + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_YELLOW);
+            ncurses_init_pair(self::COLOR_REF_OBJECT_DST, NCURSES_COLOR_BLACK, NCURSES_COLOR_RED);
+            ncurses_init_pair(self::COLOR_REF_OBJECT_DST + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_RED);
         }
 
         ncurses_werase($this->pad);
@@ -609,6 +633,10 @@ class NcursesVarDump implements NcursesInterface
                     $ref = $this->objectIdList[$tree["id"]];
 
                     foreach ($ref as $k => $v) {
+                        if ("uid" === $k) {
+                            continue;
+                        }
+
                         $tree[$k] = $v;
                     }
 
@@ -627,12 +655,19 @@ class NcursesVarDump implements NcursesInterface
                 $this->expandableList[$this->posY] = &$tree;
 
                 // render object instance
-                $this->objectIdList[$tree["id"]] = $tree;
+                $this->objectIdList[$tree["id"]]    = $tree;
+                $idColor                            = 6;
+
+                if ($this->cloneObjectUidSrc === $tree["uid"]) {
+                    $idColor = self::COLOR_REF_OBJECT_SRC;
+                } elseif ($this->cloneObjectUidDst === $tree["uid"]) {
+                    $idColor = self::COLOR_REF_OBJECT_DST;
+                }
 
                 $pad        = str_repeat(" ", $level * 4);
                 $rightArrow = $tree["clone"] ? ">>" : "▸";
                 $render     = "<<4>>object<<0>>(<<5>>{$tree["class"]}<<0>>)";
-                $render    .= "<<6>>#{$tree["id"]} <<0>>(<<1>>{$tree["count"]}<<0>>) ";
+                $render    .= "<<$idColor>>#{$tree["id"]}<<0>> (<<1>>{$tree["count"]}<<0>>) ";
                 $render    .= ($tree["expanded"] && !$tree["clone"]) ? "▾" : $rightArrow;
                 $this->printText($render);
                 $this->addPosition(0, 1);
@@ -875,12 +910,45 @@ class NcursesVarDump implements NcursesInterface
     }
 
     /**
+     * Find non-clone object by its identifier
+     * @param string $idObject
+     * @param array $tree tree to search in
+     * @return string found object UID
+     */
+    protected function findReferencedObject($idObject, array $tree)
+    {
+        if ("object" == $tree["type"] && !$tree["clone"]) {
+            // check if it is the searched object
+            if ($idObject === $tree["id"]) {
+                // object found
+                return $tree["uid"];
+            } else {
+                // explore child elements
+                foreach ($tree["properties"] as &$property) {
+                    if ($uid = $this->findReferencedObject($idObject, $property)) {
+                        return $uid;
+                    }
+                }
+            }
+        } elseif ("array" == $tree["type"]) {
+            // explore child elements
+            foreach ($tree["children"] as &$child) {
+                if ($uid = $this->findReferencedObject($idObject, $child)) {
+                    return $uid;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Expands an object and all of its ancestors
      * @param string $idObject object identifier
      * @param array $tree tree to search in
      * @return boolean
      */
-    protected function expandFromObjectToRoot($idObject, array &$tree)
+    protected function expandFromReferencedObjectToRoot($idObject, array &$tree)
     {
         $found = false;
 
@@ -892,7 +960,7 @@ class NcursesVarDump implements NcursesInterface
             } else {
                 // explore child elements
                 foreach ($tree["properties"] as &$property) {
-                    if ($this->expandFromObjectToRoot($idObject, $property)) {
+                    if ($this->expandFromReferencedObjectToRoot($idObject, $property)) {
                         $found = true;
                         break;
                     }
@@ -901,7 +969,7 @@ class NcursesVarDump implements NcursesInterface
         } elseif ("array" == $tree["type"]) {
             // explore child elements
             foreach ($tree["children"] as &$child) {
-                if ($this->expandFromObjectToRoot($idObject, $child)) {
+                if ($this->expandFromReferencedObjectToRoot($idObject, $child)) {
                     $found = true;
                     break;
                 }

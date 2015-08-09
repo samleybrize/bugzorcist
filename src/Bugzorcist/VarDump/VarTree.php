@@ -104,6 +104,7 @@ class VarTree
             case "object":
                 // each instance cannot be processed twice
                 $level["id"]            = spl_object_hash($var);
+                $level["uid"]           = uniqid("", true);
 
                 if (in_array($var, $this->objectList, true)) {
                     return $level;
