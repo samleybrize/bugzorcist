@@ -177,6 +177,12 @@ class NcursesVarDump implements NcursesInterface
      */
     private $cloneObjectUidDst;
 
+    // TODO
+    private $searchText;
+
+    // TODO
+    private $searchFoundOccurences = 0;
+
     /**
      * Constructor
      * @param mixed $var var to dump
@@ -501,9 +507,10 @@ class NcursesVarDump implements NcursesInterface
         ncurses_werase($this->pad);
         $this->setPositionXY(0, 0);
 
-        $this->maxY                 = 0;
-        $this->expandableList       = array();
-        $this->highlightRefYList    = array();
+        $this->maxY                     = 0;
+        $this->searchFoundOccurences    = 0;
+        $this->expandableList           = array();
+        $this->highlightRefYList        = array();
 
         $this->objectIdList = array();
         $locale             = setlocale(LC_NUMERIC, 0);
@@ -808,6 +815,34 @@ class NcursesVarDump implements NcursesInterface
         // if the text does not begin with a color tag, we add one with default color
         if (count($text) > count($matches)) {
             array_unshift($matches, "<<0>>");
+        }
+
+        // TODO search
+        if (null !== $this->searchText && false !== ($searchPos = strpos(implode("", $text), $this->searchText))) {
+            // TODO find $searchText
+            // TODO if it is in a single element
+            // TODO if it is in several elements
+            // TODO there could be several occurences
+            $curPos         = 0;
+            $searchLength   = strlen($this->searchText);
+
+            foreach ($text as $k => $t) {
+                $tLength = strlen($t);
+
+                if ($searchPos >= $curPos && $searchPos < $curPos + $tLength) {
+                    $found          = substr($t, $searchPos - $curPos, $searchLength);
+                    $searchPos     += strlen($found);
+                    $searchLength  -= strlen($found);
+
+                    // TODO
+                }
+
+                if ($searchLength <= 0) {
+                    break;
+                }
+
+                $curPos += $tLength;
+            }
         }
 
         // print colored text
