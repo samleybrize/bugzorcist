@@ -182,7 +182,7 @@ class NcursesVarDump implements NcursesInterface
      * Text to search
      * @var string
      */
-    private $searchText = "";
+    private $searchText;
 
     /**
      * Number of search occurences found
@@ -831,7 +831,12 @@ class NcursesVarDump implements NcursesInterface
         $textInline         = implode("", $text);
         $textInlineLength   = strlen($textInline);
 
-        while (null !== $this->searchText && $searchStart <= $textInlineLength && false !== ($searchPos = strpos($textInline, $this->searchText, $searchStart))) {
+        while (
+            null !== $this->searchText &&
+            "" !== $this->searchText &&
+            $searchStart <= $textInlineLength &&
+            false !== ($searchPos = strpos($textInline, $this->searchText, $searchStart))
+        ) {
             // found text
             $curPos             = 0;
             $searchLength       = strlen($this->searchText);
