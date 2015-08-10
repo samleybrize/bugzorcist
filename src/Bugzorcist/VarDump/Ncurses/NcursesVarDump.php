@@ -826,9 +826,12 @@ class NcursesVarDump implements NcursesInterface
             array_unshift($matches, "<<0>>");
         }
 
-        // TODO there could be several occurences
         // text search
-        if (null !== $this->searchText && false !== ($searchPos = strpos(implode("", $text), $this->searchText))) {
+        $searchStart        = 0;
+        $textInline         = implode("", $text);
+        $textInlineLength   = strlen($textInline);
+
+        while (null !== $this->searchText && $searchStart <= $textInlineLength && false !== ($searchPos = strpos($textInline, $this->searchText, $searchStart))) {
             // found text
             $curPos             = 0;
             $searchLength       = strlen($this->searchText);
@@ -890,6 +893,9 @@ class NcursesVarDump implements NcursesInterface
                 $text       = array_merge(array_slice($text, 0, $k), $replace, array_slice($text, $k + 1));
                 $matches    = array_merge(array_slice($matches, 0, $k), $replaceColorList[$k], array_slice($matches, $k + 1));
             }
+
+            // to find next occurence in same text
+            $searchStart += $searchPos;
         }
 
         // print colored text
