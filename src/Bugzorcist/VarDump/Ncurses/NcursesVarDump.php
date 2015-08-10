@@ -311,6 +311,29 @@ class NcursesVarDump implements NcursesInterface
                 $this->cursorHighlight = !$this->cursorHighlight;
                 break;
 
+            // TODO F9
+            case NCURSES_KEY_F9:
+                // search text
+                $this->searchText   = "";
+                $searchKeyCode      = null;
+                $input              = null;
+
+                while (27 !== $searchKeyCode && 13 !== $searchKeyCode) {
+                    $input              = fgetc(STDIN);
+                    $searchKeyCode      = ord($input);
+
+                    if (!preg_match("#^[[:graph:]]$#", $input)) {
+                        continue;
+                    }
+
+                    $this->searchText  .= $input;
+                    error_log($this->searchText); // TODO
+
+                    // TODO refresh
+                    $this->refresh();
+                }
+                break;
+
             // enter key
             case 13:
                 // expand array/object/string
