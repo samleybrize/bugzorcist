@@ -319,11 +319,14 @@ class NcursesVarDump implements NcursesInterface
                 $input              = null;
 
                 while (27 !== $searchKeyCode && 13 !== $searchKeyCode) {
-                    $input              = fgetc(STDIN);
-                    $searchKeyCode      = ord($input);
+                    $searchKeyCode      = ncurses_wgetch($this->pad);
+                    $input              = chr($searchKeyCode);
 
+                    if (27 === $searchKeyCode || 13 === $searchKeyCode) {
+                        break;
+                    }
                     if (!preg_match("#^[[:graph:]]$#", $input)) {
-                        continue;
+//                         continue;
                     }
 
                     $this->searchText  .= $input;
