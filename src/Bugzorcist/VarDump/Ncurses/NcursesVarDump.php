@@ -20,8 +20,9 @@ use Bugzorcist\VarDump\VarTree;
  */
 class NcursesVarDump implements NcursesInterface
 {
-    const COLOR_REF_OBJECT_SRC = 26;
-    const COLOR_REF_OBJECT_DST = 27;
+    const COLOR_REF_OBJECT_SRC  = 26;
+    const COLOR_REF_OBJECT_DST  = 27;
+    const COLOR_SEARCH_MATCH    = 28;
 
     /**
      * Var tree
@@ -177,10 +178,16 @@ class NcursesVarDump implements NcursesInterface
      */
     private $cloneObjectUidDst;
 
-    // TODO
-    private $searchText;
+    /**
+     * Text to search
+     * @var string
+     */
+    private $searchText = "";
 
-    // TODO
+    /**
+     * Number of search occurences found
+     * @var string
+     */
     private $searchFoundOccurences = 0;
 
     /**
@@ -502,6 +509,8 @@ class NcursesVarDump implements NcursesInterface
             ncurses_init_pair(self::COLOR_REF_OBJECT_SRC + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_YELLOW);
             ncurses_init_pair(self::COLOR_REF_OBJECT_DST, NCURSES_COLOR_BLACK, NCURSES_COLOR_RED);
             ncurses_init_pair(self::COLOR_REF_OBJECT_DST + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_RED);
+            ncurses_init_pair(self::COLOR_SEARCH_MATCH, NCURSES_COLOR_BLACK, NCURSES_COLOR_CYAN);
+            ncurses_init_pair(self::COLOR_SEARCH_MATCH + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_CYAN);
         }
 
         ncurses_werase($this->pad);
@@ -817,31 +826,69 @@ class NcursesVarDump implements NcursesInterface
             array_unshift($matches, "<<0>>");
         }
 
-        // TODO search
+        // TODO there could be several occurences
+        // text search
         if (null !== $this->searchText && false !== ($searchPos = strpos(implode("", $text), $this->searchText))) {
-            // TODO find $searchText
-            // TODO if it is in a single element
-            // TODO if it is in several elements
-            // TODO there could be several occurences
-            $curPos         = 0;
-            $searchLength   = strlen($this->searchText);
+            // found text
+            $curPos             = 0;
+            $searchLength       = strlen($this->searchText);
+            $replaceTextList    = array();
+            $replaceColorList   = array();
+            $this->searchFoundOccurences++;
 
+            // identify pieces that match search text
+            // for the text search "rt", replacement is :
+            // aze[rt]y        => aze / rt / y
+            // aze[r] / [t]y   => aze / rt / y
             foreach ($text as $k => $t) {
                 $tLength = strlen($t);
 
                 if ($searchPos >= $curPos && $searchPos < $curPos + $tLength) {
                     $found          = substr($t, $searchPos - $curPos, $searchLength);
-                    $searchPos     += strlen($found);
-                    $searchLength  -= strlen($found);
+                    $foundLength    = strlen($found);
+                    $pre            = substr($t, 0, $searchPos - $curPos);
+                    $post           = substr($t, $searchPos - $curPos + $foundLength);
 
-                    // TODO
+                    if (!array_key_exists($k, $replaceTextList)) {
+                        $replaceTextList[$k]    = array();
+                        $replaceColorList[$k]   = array();
+                    }
+
+                    // add text before match to replacement
+                    if ($pre) {
+                        $replaceTextList[$k][]  = $pre;
+                        $replaceColorList[$k][] = $matches[$k];
+                    }
+
+                    // add matched text
+                    $replaceTextList[$k][]  = $found;
+                    $replaceColorList[$k][] = "<<" . self::COLOR_SEARCH_MATCH . ">>";
+
+                    // add text after match to replacement
+                    if ($post) {
+                        $replaceTextList[$k][]  = $post;
+                        $replaceColorList[$k][] = $matches[$k];
+                    }
+
+                    // for further processing
+                    $searchPos     += $foundLength;
+                    $searchLength  -= $foundLength;
                 }
 
                 if ($searchLength <= 0) {
+                    // there is no more text to search
                     break;
                 }
 
                 $curPos += $tLength;
+            }
+
+            // do replacement
+            krsort($replaceTextList);
+
+            foreach ($replaceTextList as $k => $replace) {
+                $text       = array_merge(array_slice($text, 0, $k), $replace, array_slice($text, $k + 1));
+                $matches    = array_merge(array_slice($matches, 0, $k), $replaceColorList[$k], array_slice($matches, $k + 1));
             }
         }
 
@@ -961,7 +1008,7 @@ class NcursesVarDump implements NcursesInterface
             } else {
                 // explore child elements
                 foreach ($tree["properties"] as &$property) {
-                    if ($uid = $this->findReferencedObject($idObject, $property)) {
+                    if ($uid = $this->findReferencedObject($idObject, $property["value"])) {
                         return $uid;
                     }
                 }
