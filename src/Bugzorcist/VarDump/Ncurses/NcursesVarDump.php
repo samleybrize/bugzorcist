@@ -350,8 +350,9 @@ class NcursesVarDump implements NcursesInterface
                     $searchKeyCode      = ncurses_wgetch($this->pad);
                     $input              = chr($searchKeyCode);
 
-                    if (27 === $searchKeyCode) {
+                    if (27 === $searchKeyCode || (13 === $searchKeyCode && "" === $this->searchText)) {
                         // end search if pressed key is ESC
+                        // end also if pressed key is ENTER and search text is empty
                         $this->showSearchPad    = false;
                         $this->editSearchPad    = false;
                         $this->searchText       = "";
@@ -371,9 +372,7 @@ class NcursesVarDump implements NcursesInterface
                     } else {
                         // strip non printable characters (such as arrow keys, ...)
                         $rawSearchText     .= $input;
-                        $utfModifier        = preg_match("#.#u", $rawSearchText) ? "u" : "";
-                        $this->searchText   = preg_replace("#[^[:graph:][:alnum:]]#$utfModifier", '', $rawSearchText);
-                        $this->searchText   = str_replace(array("\n", "\r"), "", $this->searchText);
+                        $this->searchText   = $this->cleanString($rawSearchText);
 
                         // refresh only if the new text is different from the previous
                         if (strlen($previousSearchText) < strlen($this->searchText)) {
@@ -1296,7 +1295,6 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function cleanString($str)
     {
-        // TODO spaces are discarded
         $utfModifier    = preg_match("#.#u", $str) ? "u" : "";
         $cleaned        = preg_replace("#[^[:graph:][:alnum:] ]#$utfModifier", '', $str);
         $cleaned        = str_replace(array("\n", "\r"), "", $cleaned);
