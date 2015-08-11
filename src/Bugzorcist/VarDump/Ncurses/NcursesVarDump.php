@@ -311,29 +311,41 @@ class NcursesVarDump implements NcursesInterface
                 $this->cursorHighlight = !$this->cursorHighlight;
                 break;
 
-            // TODO F9
+            // F9
             case NCURSES_KEY_F9:
                 // search text
                 $this->searchText   = "";
-                $searchKeyCode      = null;
-                $input              = null;
+                $rawSearchText      = "";
+                $previousSearchText = "";
 
-                while (27 !== $searchKeyCode && 13 !== $searchKeyCode) {
+                while (true) {
                     $searchKeyCode      = ncurses_wgetch($this->pad);
                     $input              = chr($searchKeyCode);
 
                     if (27 === $searchKeyCode || 13 === $searchKeyCode) {
+                        // end input if pressed key is ESC or ENTER
                         break;
-                    }
-                    if (!preg_match("#^[[:graph:]]$#", $input)) {
-//                         continue;
-                    }
+                    } elseif (NCURSES_KEY_BACKSPACE === $searchKeyCode) {
+                        // delete last character
+                        $rawSearchText      = $this->cleanString($rawSearchText);
+                        $rawSearchText      = mb_substr($rawSearchText, 0, -1, mb_detect_encoding($rawSearchText));
+                        $this->searchText   = $rawSearchText;
+                        $previousSearchText = $this->searchText;
+                        $this->refresh();
+                    } else {
+                        // strip non printable characters (such as arrow keys, ...)
+                        $rawSearchText     .= $input;
+                        $utfModifier        = preg_match("#.#u", $rawSearchText) ? "u" : "";
+                        $this->searchText   = preg_replace("#[^[:graph:][:alnum:]]#$utfModifier", '', $rawSearchText);
+                        $this->searchText   = str_replace(array("\n", "\r"), "", $this->searchText);
 
-                    $this->searchText  .= $input;
-                    error_log($this->searchText); // TODO
+                        // refresh only if the new text is different from the previous
+                        if (strlen($previousSearchText) < strlen($this->searchText)) {
+                            $this->refresh();
+                        }
 
-                    // TODO refresh
-                    $this->refresh();
+                        $previousSearchText = $this->searchText;
+                    }
                 }
                 break;
 
@@ -1164,5 +1176,18 @@ class NcursesVarDump implements NcursesInterface
                 $this->onKeyPress(NCURSES_KEY_DOWN);
             }
         }
+    }
+
+    /**
+     * Cleans a string (remove non printable characters and new lines)
+     * @param string $str
+     * @return string
+     */
+    protected function cleanString($str)
+    {
+        $utfModifier    = preg_match("#.#u", $str) ? "u" : "";
+        $cleaned        = preg_replace("#[^[:graph:][:alnum:]]#$utfModifier", '', $str);
+        $cleaned        = str_replace(array("\n", "\r"), "", $cleaned);
+        return $cleaned;
     }
 }
