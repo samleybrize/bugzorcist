@@ -14,6 +14,9 @@ namespace Bugzorcist\VarDump\Ncurses;
 use Bugzorcist\VarDump\VarDumpNcurses;
 use Bugzorcist\VarDump\VarTree;
 
+// TODO case insensitive search?
+// TODO max position when search box is displayed
+// TODO = move cursor if needed
 /**
  * Ncurses var dump viewer
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -41,6 +44,12 @@ class NcursesVarDump implements NcursesInterface
      * @var resource
      */
     private $pad;
+
+    /**
+     * Ncurses search box pad
+     * @var resource
+     */
+    private $padSearch;
 
     /**
      * Width of the viewport
@@ -182,13 +191,25 @@ class NcursesVarDump implements NcursesInterface
      * Text to search
      * @var string
      */
-    private $searchText;
+    private $searchText = "";
 
     /**
      * Number of search occurences found
      * @var string
      */
     private $searchFoundOccurences = 0;
+
+    /**
+     * Whether to show search pad
+     * @var boolean
+     */
+    private $showSearchPad = false;
+
+    /**
+     * Indicates if search pad is in edit mode
+     * @var boolean
+     */
+    private $editSearchPad = false;
 
     /**
      * Constructor
@@ -215,7 +236,8 @@ class NcursesVarDump implements NcursesInterface
 
         if (null === $this->pad) {
             // creates a dummy pad if none has been created
-            $this->pad = ncurses_newpad(1, 1);
+            $this->pad          = ncurses_newpad(1, 1);
+            $this->padSearch    = ncurses_newpad(1, 1);
         }
 
         $this->refresh();
@@ -242,6 +264,7 @@ class NcursesVarDump implements NcursesInterface
     {
         if (null !== $this->pad) {
             ncurses_delwin($this->pad);
+            ncurses_delwin($this->padSearch);
         } elseif (null === $this->padRealWidth) {
             $this->calculatePadRealSize();
         }
@@ -256,6 +279,7 @@ class NcursesVarDump implements NcursesInterface
         $w                      = max($this->padWidth, $this->padRealWidth);
         $h                      = max($this->padHeight, $this->padRealHeight);
         $this->pad              = ncurses_newpad($h, $w);
+        $this->padSearch        = ncurses_newpad(1, $this->padWidth);
 
         if (false === $this->pad) {
             throw new \RuntimeException("Failed to create a ncurses pad (width: $this->padRealWidth, height: $this->padRealHeight)");
@@ -271,7 +295,9 @@ class NcursesVarDump implements NcursesInterface
     {
         if (null !== $this->pad) {
             ncurses_delwin($this->pad);
-            $this->pad = null;
+            ncurses_delwin($this->padSearch);
+            $this->pad          = null;
+            $this->padSearch    = null;
         }
     }
 
@@ -314,16 +340,26 @@ class NcursesVarDump implements NcursesInterface
             // F9
             case NCURSES_KEY_F9:
                 // search text
-                $this->searchText   = "";
-                $rawSearchText      = "";
-                $previousSearchText = "";
+                $this->showSearchPad    = true;
+                $this->editSearchPad    = true;
+                $rawSearchText          = $this->searchText;
+                $previousSearchText     = "";
+                $this->refreshSearchPad();
 
                 while (true) {
                     $searchKeyCode      = ncurses_wgetch($this->pad);
                     $input              = chr($searchKeyCode);
 
-                    if (27 === $searchKeyCode || 13 === $searchKeyCode) {
-                        // end input if pressed key is ESC or ENTER
+                    if (27 === $searchKeyCode) {
+                        // end search if pressed key is ESC
+                        $this->showSearchPad    = false;
+                        $this->editSearchPad    = false;
+                        $this->searchText       = "";
+                        break;
+                    } elseif (13 === $searchKeyCode) {
+                        // end input if pressed key is ENTER
+                        $this->editSearchPad = false;
+                        $this->refresh();
                         break;
                     } elseif (NCURSES_KEY_BACKSPACE === $searchKeyCode) {
                         // delete last character
@@ -331,7 +367,7 @@ class NcursesVarDump implements NcursesInterface
                         $rawSearchText      = mb_substr($rawSearchText, 0, -1, mb_detect_encoding($rawSearchText));
                         $this->searchText   = $rawSearchText;
                         $previousSearchText = $this->searchText;
-                        $this->refresh();
+                        $this->refreshSearchPad();
                     } else {
                         // strip non printable characters (such as arrow keys, ...)
                         $rawSearchText     .= $input;
@@ -341,7 +377,7 @@ class NcursesVarDump implements NcursesInterface
 
                         // refresh only if the new text is different from the previous
                         if (strlen($previousSearchText) < strlen($this->searchText)) {
-                            $this->refresh();
+                            $this->refreshSearchPad();
                         }
 
                         $previousSearchText = $this->searchText;
@@ -570,6 +606,73 @@ class NcursesVarDump implements NcursesInterface
             $this->pad,
             0, $this->decX,
             $this->padPositionY, $this->padPositionX,
+            $this->padHeight + $this->padPositionY - 1, $this->padWidth - 1
+        );
+
+        $this->refreshSearchPad();
+    }
+
+    /**
+     * Refresh search pad content
+     */
+    protected function refreshSearchPad()
+    {
+        if (!$this->showSearchPad) {
+            return;
+        }
+
+        $backgroundColor    = $this->editSearchPad ? NCURSES_COLOR_YELLOW : NCURSES_COLOR_MAGENTA;
+        $length             = 1;
+
+        if ($this->editSearchPad) {
+            // edit mode
+            $labels = array(
+                "ESC"   => "Cancel",
+                "ENTER" => "Done",
+            );
+        } else {
+            // not in edit mode
+            $labels = array(
+                "F9" => "Edit",
+            );
+        }
+
+        ncurses_werase($this->padSearch);
+
+        // write an empty space
+        ncurses_wattron($this->padSearch, NCURSES_A_REVERSE);
+        ncurses_wcolor_set($this->padSearch, $backgroundColor);
+        ncurses_waddstr($this->padSearch, " ");
+        ncurses_wattroff($this->padSearch, NCURSES_A_REVERSE);
+
+        // write key/labels
+        foreach ($labels as $key => $label) {
+            ncurses_wcolor_set($this->padSearch, 0);
+            ncurses_waddstr($this->padSearch, $key);
+            ncurses_wattron($this->padSearch, NCURSES_A_REVERSE);
+            ncurses_wcolor_set($this->padSearch, $backgroundColor);
+            ncurses_waddstr($this->padSearch, "$label ");
+            ncurses_wattroff($this->padSearch, NCURSES_A_REVERSE);
+
+            $length += strlen($key);
+            $length += strlen($label);
+            $length += 1;
+        }
+
+        // search box
+        $length += 2;
+        ncurses_wcolor_set($this->padSearch, 0);
+        ncurses_waddstr($this->padSearch, "  ");
+        ncurses_wattron($this->padSearch, NCURSES_A_REVERSE);
+        ncurses_wcolor_set($this->padSearch, $backgroundColor);
+        ncurses_waddstr($this->padSearch, str_pad(" Search: $this->searchText", $this->padWidth - $length, " ", STR_PAD_RIGHT));
+        ncurses_wattroff($this->padSearch, NCURSES_A_REVERSE);
+
+        // display pad
+        ncurses_prefresh(
+            $this->padSearch,
+            0, 0,
+            $this->padHeight + $this->padPositionY - 1, $this->padPositionX,
             $this->padHeight + $this->padPositionY - 1, $this->padWidth - 1
         );
     }
