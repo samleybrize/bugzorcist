@@ -665,6 +665,14 @@ class NcursesVarDump implements NcursesInterface
         ncurses_waddstr($this->padSearch, "  ");
         ncurses_wattron($this->padSearch, NCURSES_A_REVERSE);
         ncurses_wcolor_set($this->padSearch, $backgroundColor);
+
+        if (!$this->editSearchPad) {
+            // show found occurences
+            $text       = " [$this->searchFoundOccurences found]";
+            $length    += strlen($text);
+            ncurses_waddstr($this->padSearch, $text);
+        }
+
         ncurses_waddstr($this->padSearch, str_pad(" Search: $this->searchText", $this->padWidth - $length, " ", STR_PAD_RIGHT));
         ncurses_wattroff($this->padSearch, NCURSES_A_REVERSE);
 
@@ -1288,8 +1296,9 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function cleanString($str)
     {
+        // TODO spaces are discarded
         $utfModifier    = preg_match("#.#u", $str) ? "u" : "";
-        $cleaned        = preg_replace("#[^[:graph:][:alnum:]]#$utfModifier", '', $str);
+        $cleaned        = preg_replace("#[^[:graph:][:alnum:] ]#$utfModifier", '', $str);
         $cleaned        = str_replace(array("\n", "\r"), "", $cleaned);
         return $cleaned;
     }
