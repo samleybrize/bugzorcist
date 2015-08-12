@@ -14,7 +14,6 @@ namespace Bugzorcist\VarDump\Ncurses;
 use Bugzorcist\VarDump\VarDumpNcurses;
 use Bugzorcist\VarDump\VarTree;
 
-// TODO case insensitive search?
 // TODO max position when search box is displayed
 // TODO = move cursor if needed
 /**
@@ -353,13 +352,20 @@ class NcursesVarDump implements NcursesInterface
                     if (27 === $searchKeyCode || (13 === $searchKeyCode && "" === $this->searchText)) {
                         // end search if pressed key is ESC
                         // end also if pressed key is ENTER and search text is empty
-                        $this->showSearchPad    = false;
-                        $this->editSearchPad    = false;
-                        $this->searchText       = "";
+                        $this->showSearchPad            = false;
+                        $this->editSearchPad            = false;
+                        $this->searchText               = "";
+                        $this->searchFoundOccurences    = 0;
                         break;
                     } elseif (13 === $searchKeyCode) {
                         // end input if pressed key is ENTER
-                        $this->editSearchPad = false;
+                        $this->editSearchPad            = false;
+                        $this->searchFoundOccurences    = 0;
+
+                        $this->internalWriteEnabled     = true;
+                        $this->refresh();
+
+                        $this->internalWriteEnabled     = false;
                         $this->refresh();
                         break;
                     } elseif (NCURSES_KEY_BACKSPACE === $searchKeyCode) {
@@ -590,7 +596,6 @@ class NcursesVarDump implements NcursesInterface
         $this->setPositionXY(0, 0);
 
         $this->maxY                     = 0;
-        $this->searchFoundOccurences    = 0;
         $this->expandableList           = array();
         $this->highlightRefYList        = array();
 
@@ -983,14 +988,17 @@ class NcursesVarDump implements NcursesInterface
             null !== $this->searchText &&
             "" !== $this->searchText &&
             $searchStart <= $textInlineLength &&
-            false !== ($searchPos = strpos($textInline, $this->searchText, $searchStart))
+            false !== ($searchPos = stripos($textInline, $this->searchText, $searchStart))
         ) {
             // found text
             $curPos             = 0;
             $searchLength       = strlen($this->searchText);
             $replaceTextList    = array();
             $replaceColorList   = array();
-            $this->searchFoundOccurences++;
+
+            if ($this->internalWriteEnabled) {
+                $this->searchFoundOccurences++;
+            }
 
             // identify pieces that match search text
             // for the text search "rt", replacement is :
