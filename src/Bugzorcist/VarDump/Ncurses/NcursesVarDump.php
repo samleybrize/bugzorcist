@@ -14,8 +14,6 @@ namespace Bugzorcist\VarDump\Ncurses;
 use Bugzorcist\VarDump\VarDumpNcurses;
 use Bugzorcist\VarDump\VarTree;
 
-// TODO max position when search box is displayed
-// TODO = move cursor if needed
 /**
  * Ncurses var dump viewer
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -469,7 +467,7 @@ class NcursesVarDump implements NcursesInterface
                         $this->updateHighlightedPosition($this->cursorPositionY);
 
                         // if the cursor is outside the screen, apply a shift in order to move the content
-                        if ($newCursorPositionY - $this->decY >= $this->padHeight) {
+                        if ($newCursorPositionY - $this->decY >= $this->padHeight - 1) {
                             $this->decY++;
                             break;
                         }
@@ -522,10 +520,10 @@ class NcursesVarDump implements NcursesInterface
                         $this->updateHighlightedPosition($this->cursorPositionY);
 
                         // if the cursor is outside the screen, apply a shift in order to move the content
-                        if ($newCursorPositionY - $this->decY >= $this->padHeight) {
+                        if ($newCursorPositionY - $this->decY >= $this->padHeight - 1) {
                             $this->decY = min(
                                 $newCursorPositionY,
-                                $this->maxY - $this->padHeight
+                                $this->maxY - ($this->padHeight - 1)
                             );
                             break;
                         }
