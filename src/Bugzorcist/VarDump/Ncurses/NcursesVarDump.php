@@ -191,10 +191,16 @@ class NcursesVarDump implements NcursesInterface
     private $searchText = "";
 
     /**
-     * Number of search occurences found
+     * Number of found search occurences
      * @var string
      */
     private $searchFoundOccurences = 0;
+
+    /**
+     * Found search occurences UID list
+     * @var array
+     */
+    private $searchFoundUidList = array();
 
     /**
      * Whether to show search pad
@@ -354,17 +360,21 @@ class NcursesVarDump implements NcursesInterface
                         $this->editSearchPad            = false;
                         $this->searchText               = "";
                         $this->searchFoundOccurences    = 0;
+                        $this->searchFoundUidList       = array();
                         break;
                     } elseif (13 === $searchKeyCode) {
                         // end input if pressed key is ENTER
                         $this->editSearchPad            = false;
                         $this->searchFoundOccurences    = 0;
+                        $this->searchFoundUidList       = array();
 
                         $this->internalWriteEnabled     = true;
                         $this->refresh();
 
                         $this->internalWriteEnabled     = false;
                         $this->refresh();
+
+                        $this->searchFoundUidList       = array_unique($this->searchFoundUidList);
                         break;
                     } elseif (NCURSES_KEY_BACKSPACE === $searchKeyCode) {
                         // delete last character
@@ -720,7 +730,7 @@ class NcursesVarDump implements NcursesInterface
                 }
 
                 // render string
-                $written    = $this->printText($render);
+                $written    = $this->printText($render, $tree["uid"]);
                 $newlines   = substr_count($string, "\n");
                 $this->addPosition($written, 0);
                 $this->printRawText("\"$string\"", VarDumpNcurses::COLOR_RED);
@@ -743,7 +753,7 @@ class NcursesVarDump implements NcursesInterface
             case "float":
             case "double":
                 $render = "<<4>>{$tree["type"]}<<0>>(<<1>>{$tree["value"]}<<0>>)";
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
                 break;
 
@@ -751,7 +761,7 @@ class NcursesVarDump implements NcursesInterface
             case "bool":
             case "boolean":
                 $render = "<<4>>bool<<0>>(<<2>>{$tree["value"]}<<0>>)";
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
                 break;
 
@@ -759,14 +769,14 @@ class NcursesVarDump implements NcursesInterface
             case "null":
             case "NULL":
                 $render = "<<2>>null";
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
                 break;
 
             // resource
             case "resource":
                 $render = "<<4>>resource<<0>>({$tree["value"]})";
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
                 break;
 
@@ -783,7 +793,7 @@ class NcursesVarDump implements NcursesInterface
                 $pad        = str_repeat(" ", $level * 4);
                 $render     = "<<4>>array<<0>>(<<1>>{$tree["count"]}<<0>>) ";
                 $render    .= $tree["expanded"] ? "▾" : "▸";
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
 
                 if ($tree["expanded"] || $this->internalWriteEnabled) {
@@ -791,7 +801,7 @@ class NcursesVarDump implements NcursesInterface
                         $this->setPositionX(0);
 
                         $render = "$pad    [$k] = ";
-                        $this->printText($render);
+                        $this->printText($render, $tree["uid"]);
                         $this->addPosition(strlen($render), 0);
 
                         $this->renderVar($tree["children"][$k], $level + 1);
@@ -837,7 +847,7 @@ class NcursesVarDump implements NcursesInterface
                 $render     = "<<4>>object<<0>>(<<5>>{$tree["class"]}<<0>>)";
                 $render    .= "<<$idColor>>#{$tree["id"]}<<0>> (<<1>>{$tree["count"]}<<0>>) ";
                 $render    .= ($tree["expanded"] && !$tree["clone"]) ? "▾" : $rightArrow;
-                $this->printText($render);
+                $this->printText($render, $tree["uid"]);
                 $this->addPosition(0, 1);
 
                 if (($tree["expanded"] || $this->internalWriteEnabled) && !$tree["clone"]) {
@@ -850,7 +860,7 @@ class NcursesVarDump implements NcursesInterface
                             "<<3>>{$v["access"]}:<<0>>{$v["name"]}"
                         ;
                         $render     = "$pad    [$key] = ";
-                        $written    = $this->printText($render);
+                        $written    = $this->printText($render, $tree["uid"]);
                         $this->addPosition($written, 0);
 
                         $this->renderVar($tree["properties"][$k]["value"], $level + 1);
@@ -952,9 +962,10 @@ class NcursesVarDump implements NcursesInterface
     /**
      * Prints a text. The text may contain color tags like "<<4>>" where "4" is the color number as declared by the VarDumpNcurses::COLOR_* constants.
      * @param string $text text to print
+     * @param string $uid [optional] element UID of the text being printed
      * @return int number of characters printed
      */
-    protected function printText($text)
+    protected function printText($text, $uid = null)
     {
         // don't want to write outside of the viewport
         if (!$this->internalWriteEnabled && $this->isBeingPrintedOutside($text)) {
@@ -996,6 +1007,10 @@ class NcursesVarDump implements NcursesInterface
 
             if ($this->internalWriteEnabled) {
                 $this->searchFoundOccurences++;
+
+                if ($uid) {
+                    $this->searchFoundUidList[] = $uid;
+                }
             }
 
             // identify pieces that match search text
@@ -1191,7 +1206,7 @@ class NcursesVarDump implements NcursesInterface
     }
 
     /**
-     * Expands an object and all of its ancestors
+     * Expands an object and all of its ancestors (clones are ignored)
      * @param string $idObject object identifier
      * @param array $tree tree to search in
      * @return boolean
@@ -1258,12 +1273,11 @@ class NcursesVarDump implements NcursesInterface
     }
 
     /**
-     * Returns the Y position of an object
+     * Returns the Y position of an object (original instance, clones are ignored)
      * @param string $idObject object identifier
      */
     protected function getObjectPositionY($idObject)
     {
-        // use $this->expandableList
         foreach ($this->expandableList as $y => $expandable) {
             if ("object" !== $expandable["type"] || $idObject !== $expandable["id"] || $expandable["clone"]) {
                 continue;
