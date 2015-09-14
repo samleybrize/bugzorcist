@@ -11,6 +11,12 @@
 
 namespace Bugzorcist\VarDump;
 
+/*
+ * TODO Known bug causing infinite loop :
+ * $a = array();
+ * $a[1] = &$a;
+ */
+
 /**
  * Construct the tree representation of a var
  * @author Stephen Berquet <stephen.berquet@gmail.com>
