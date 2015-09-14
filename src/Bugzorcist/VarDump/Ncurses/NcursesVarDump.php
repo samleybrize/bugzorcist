@@ -733,7 +733,7 @@ class NcursesVarDump implements NcursesInterface
                 $written    = $this->printText($render, $tree["uid"]);
                 $newlines   = substr_count($string, "\n");
                 $this->addPosition($written, 0);
-                $this->printRawText("\"$string\"", VarDumpNcurses::COLOR_RED);
+                $this->printText("<<1>>\"$string\"<<0>>");
 
                 if ($symbol) {
                     $this->printRawText($symbol, VarDumpNcurses::COLOR_DEFAULT);
