@@ -1140,7 +1140,7 @@ class NcursesVarDump implements NcursesInterface
         $text       = explode("\n", $text);
         $lineCount  = count($text);
 
-        for ($line = 0; $line < $this->posY + $lineCount; $line++) {
+        for ($line = $this->posY; $line < $this->posY + $lineCount; $line++) {
             if (!array_key_exists($line, $this->internalWriteBuffer)) {
                 $this->internalWriteBuffer[$line] = "";
             }
