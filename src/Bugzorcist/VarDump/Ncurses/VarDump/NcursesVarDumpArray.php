@@ -20,7 +20,7 @@ class NcursesVarDumpArray extends NcursesVarDumpTypeAbstract
     {
         // TODO search
         if ("array" != $tree["type"]) {
-            throw new \InvalidArgumentException("Invalid var tree given, expected 'string'");
+            throw new \InvalidArgumentException("Invalid var tree given, expected 'array'");
         }
 
         parent::__construct($tree, $parent);

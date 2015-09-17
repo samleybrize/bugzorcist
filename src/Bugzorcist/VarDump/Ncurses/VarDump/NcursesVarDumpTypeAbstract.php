@@ -269,7 +269,7 @@ abstract class NcursesVarDumpTypeAbstract
             // compute and cache
             if (null === $this->childrenHeightCache) {
                 $children   = $this->getChildren($ifCollapsed);
-                $height     = 1;
+                $height     = 0;
 
                 foreach ($children as $child) {
                     $height += $child->getStringHeight() + $child->getChildrenHeight($ifCollapsed);

@@ -150,12 +150,14 @@ class NcursesVarDump implements NcursesInterface
      */
     private $highlightRefYList = array();
 
+    // TODO todel
     /**
      * Indicates if internal write buffer is enabled
      * @var boolean
      */
     private $internalWriteEnabled = false;
 
+    // TODO todel
     /**
      * Internal write buffer
      * @var array
@@ -222,7 +224,7 @@ class NcursesVarDump implements NcursesInterface
     public function __construct($var, $padPositionX, $padPositionY)
     {
         $varTree                = new VarTree($var);
-        $this->varTree          = $varTree->getTree();
+        $this->varTree          = $varTree->getTree(); // TODO todel
         $this->var              = NcursesVarDumpTypeAbstract::factory($this->varTree);
         $this->padPositionX     = (int) $padPositionX;
         $this->padPositionY     = (int) $padPositionY;
@@ -587,7 +589,7 @@ class NcursesVarDump implements NcursesInterface
         ncurses_werase($this->pad);
         $this->setPositionXY(0, 0);
 
-        $this->maxY                     = 0;
+        $this->maxY                     = $this->var->getStringHeight() + $this->var->getChildrenHeight(); // TODO problem
         $this->expandableList           = array();
         $this->highlightRefYList        = array();
 
@@ -688,6 +690,10 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function renderVar2(NcursesVarDumpTypeAbstract $var, $level = 0)
     {
+        if ($this->isBeingPrintedOutside2($var->getStringHeight() + $var->getChildrenHeight())) {
+            return;
+        }
+
         $strArray   = $var->getStringArray();
         $children   = $var->getChildren();
         $color      = null;
@@ -1097,15 +1103,6 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function printRawText($text, $color = VarDumpNcurses::COLOR_DEFAULT)
     {
-        if ($this->internalWriteEnabled) {
-            return $this->printRawTextInternal($text);
-        }
-
-        // don't want to write outside of the viewport
-        if ($this->isBeingPrintedOutside($text)) {
-            return 0;
-        }
-
         // if the line being printed is the one pointed by the cursor, highlight it
         if ($this->posY == $this->highlightedPositionY && $this->cursorHighlight) {
             $color += 10;
@@ -1131,6 +1128,7 @@ class NcursesVarDump implements NcursesInterface
         return strlen($text);
     }
 
+    // TODO todel
     /**
      * Indicates if a text is being pronted outside of the viewport
      * @param string $text text being printed
@@ -1140,6 +1138,19 @@ class NcursesVarDump implements NcursesInterface
     {
         $posMin = $this->posY;
         $posMax = $this->posY + substr_count($text, "\n");
+
+        if ($posMin - $this->decY >= $this->padHeight || $posMax - $this->decY < 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // TODO
+    protected function isBeingPrintedOutside2($textHeight)
+    {
+        $posMin = $this->posY;
+        $posMax = $this->posY + $textHeight;
 
         if ($posMin - $this->decY >= $this->padHeight || $posMax - $this->decY < 0) {
             return true;
