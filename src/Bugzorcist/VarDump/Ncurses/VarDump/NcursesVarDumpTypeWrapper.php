@@ -87,9 +87,9 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     /**
      * {@inheritdoc}
      */
-    public function getChildren()
+    public function getChildren($ifCollapsed = false)
     {
-        return $this->wrapped->getChildren();
+        return $this->wrapped->getChildren($ifCollapsed);
     }
 
     /**
@@ -98,7 +98,8 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     public function expand($expandParents = false)
     {
         $this->clearCaches();
-        return $this->wrapped->expand($expandParents);
+        $this->wrapped->expand($expandParents);
+        parent::expand($expandParents);
     }
 
     /**
@@ -107,7 +108,8 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     public function collapse($collapseChildren = false)
     {
         $this->clearCaches();
-        return $this->wrapped->collapse($collapseChildren);
+        $this->wrapped->collapse($collapseChildren);
+        parent::collapse($collapseChildren);
     }
 
     /**
@@ -150,7 +152,7 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     public function getStringWidth()
     {
         if (null === $this->strWidthCache) {
-            $this->strWidthCache = max($this->strPrefixWidth, $this->wrapped->getStringWidth());
+            $this->strWidthCache = $this->strPrefixWidth + $this->wrapped->getStringWidth();
         }
 
         return $this->strWidthCache;
@@ -162,6 +164,7 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     protected function clearCaches()
     {
         $this->strHeightCache   = null;
+        $this->strWidthCache    = null;
         $this->strArrayCache    = null;
     }
 }

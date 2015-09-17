@@ -13,6 +13,7 @@ namespace Bugzorcist\VarDump\Ncurses;
 
 use Bugzorcist\VarDump\VarDumpNcurses;
 use Bugzorcist\VarDump\VarTree;
+use Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract;
 
 /**
  * Ncurses var dump viewer
@@ -24,11 +25,15 @@ class NcursesVarDump implements NcursesInterface
     const COLOR_REF_OBJECT_DST  = 27;
     const COLOR_SEARCH_MATCH    = 28;
 
+    // TODO todel
     /**
      * Var tree
      * @var array
      */
     private $varTree;
+
+    // TODO
+    private $var;
 
     /**
      * Temp var used to hold references to object instances
@@ -113,12 +118,6 @@ class NcursesVarDump implements NcursesInterface
      * @var int
      */
     private $decY = 0;
-
-    /**
-     * Saved position list
-     * @var array
-     */
-    private $positionStateList = array();
 
     /**
      * Y position of the cursor
@@ -224,6 +223,7 @@ class NcursesVarDump implements NcursesInterface
     {
         $varTree                = new VarTree($var);
         $this->varTree          = $varTree->getTree();
+        $this->var              = NcursesVarDumpTypeAbstract::factory($this->varTree);
         $this->padPositionX     = (int) $padPositionX;
         $this->padPositionY     = (int) $padPositionY;
     }
@@ -233,29 +233,14 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function calculatePadRealSize()
     {
-        // initialize internal write buffer
-        $this->internalWriteBuffer  = array();
-        $this->internalWriteEnabled = true;
+        // when retrieving width, the width of the expanded version is retrieved.
+        // string type may have a collapsed version longer than its expanded version
+        $this->expandAll($this->var);
+        $expandedWidth          = max($this->var->getStringWidth(), $this->var->getChildrenWidth(true));
+        $this->var->collapse(true);
+        $collapsedWidth         = max($this->var->getStringWidth(), $this->var->getChildrenWidth(true));
 
-        if (null === $this->pad) {
-            // creates a dummy pad if none has been created
-            $this->pad          = ncurses_newpad(1, 1);
-            $this->padSearch    = ncurses_newpad(1, 1);
-        }
-
-        $this->refresh();
-
-        // disable internal write buffer
-        ncurses_delwin($this->pad);
-        $this->pad                  = null;
-        $this->internalWriteEnabled = false;
-
-        // retrieve the size of the largest line as the width
-        $this->padRealWidth         = 1;
-
-        foreach ($this->internalWriteBuffer as $line) {
-            $this->padRealWidth = max($this->padRealWidth, strlen($line));
-        }
+        $this->padRealWidth     = max($collapsedWidth, $expandedWidth);
     }
 
     /**
@@ -285,7 +270,7 @@ class NcursesVarDump implements NcursesInterface
         $this->padSearch        = ncurses_newpad(1, $this->padWidth);
 
         if (false === $this->pad) {
-            throw new \RuntimeException("Failed to create a ncurses pad (width: $this->padRealWidth, height: $this->padRealHeight)");
+            throw new \RuntimeException("Failed to create a ncurses pad (width: $w, height: $h)");
         }
 
         ncurses_keypad($this->pad, true);
@@ -313,25 +298,22 @@ class NcursesVarDump implements NcursesInterface
             // F5
             case NCURSES_KEY_F5:
                 // collapse all
-                foreach ($this->expandableList as $k => $tree) {
-                    $this->expandableList[$k]["expanded"] = false;
-                }
-
+                $this->var->collapse(true);
                 $this->gotoPositionY(0);
                 break;
 
             // F6
             case NCURSES_KEY_F6:
                 // expand all visible elements
-                foreach ($this->expandableList as $k => $tree) {
-                    $this->expandableList[$k]["expanded"] = true;
+                foreach ($this->expandableList as $expandable) {
+                    $expandable->expand();
                 }
                 break;
 
             // F7
             case NCURSES_KEY_F7:
                 // expand all elements
-                $this->expandAll($this->varTree);
+                $this->expandAll($this->var);
                 break;
 
             // F8
@@ -340,7 +322,7 @@ class NcursesVarDump implements NcursesInterface
                 $this->cursorHighlight = !$this->cursorHighlight;
                 break;
 
-            // F9
+            // TODO F9
             case NCURSES_KEY_F9:
                 // search text
                 $this->showSearchPad    = true;
@@ -401,11 +383,11 @@ class NcursesVarDump implements NcursesInterface
             // enter key
             case 13:
                 // expand array/object/string
-                if (array_key_exists($this->highlightedPositionY, $this->expandableList) &&
-                        array_key_exists("expanded", $this->expandableList[$this->highlightedPositionY])) {
+                if (array_key_exists($this->highlightedPositionY, $this->expandableList)) {
                     $element = $this->expandableList[$this->highlightedPositionY];
 
-                    if (array_key_exists("clone", $element) && $element["clone"]) {
+                    // TODO
+                    if (0 && array_key_exists("clone", $element) && $element["clone"]) {
                         // cloned element
                         // expand all elements from referenced object to root
 
@@ -428,7 +410,7 @@ class NcursesVarDump implements NcursesInterface
                         $this->cloneObjectUidDst = $this->findReferencedObject($element["id"], $this->varTree);
                     } else {
                         // regular element
-                        $this->expandableList[$this->highlightedPositionY]["expanded"] = !$element["expanded"];
+                        $element->toggleExpand();
 
                         // if the selected line is not the first line of the element, go up until the first line
                         if ($this->cursorPositionY != $this->highlightedPositionY) {
@@ -573,11 +555,13 @@ class NcursesVarDump implements NcursesInterface
 
             // ctrl + right arrow
             case 555:
+            case 559:
                 $this->decX = min($this->padRealWidth - $this->padWidth, $this->decX + $this->padWidth);
                 break;
 
             // ctrl + left arrow
             case 540:
+            case 544:
                 $this->decX = max(0, $this->decX - $this->padWidth);
                 break;
 
@@ -610,7 +594,7 @@ class NcursesVarDump implements NcursesInterface
         $this->objectIdList = array();
         $locale             = setlocale(LC_NUMERIC, 0);
         setlocale(LC_NUMERIC, "C");
-        $this->renderVar($this->varTree);
+        $this->renderVar2($this->var);
         setlocale(LC_NUMERIC, $locale);
         $this->objectIdList = array();
 
@@ -697,6 +681,48 @@ class NcursesVarDump implements NcursesInterface
         );
     }
 
+    /**
+     * Renders the var
+     * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $var var to render
+     * @param int $level [optional] depth level
+     */
+    protected function renderVar2(NcursesVarDumpTypeAbstract $var, $level = 0)
+    {
+        $strArray   = $var->getStringArray();
+        $children   = $var->getChildren();
+        $color      = null;
+        $str        = null;
+
+        // add var to expandable list
+        if ($var->isExpandable()) {
+            $this->expandableList[$this->posY] = $var;
+        }
+
+        // render string
+        foreach ($strArray as $v) {
+            if (null === $color) {
+                $color = $v;
+                continue;
+            }
+
+            $str = $v;
+            $this->printRawText($str, $color);
+
+            $str    = null;
+            $color  = null;
+        }
+
+        $this->addPosition(0, $var->getStringHeight());
+        $level++;
+
+        // render children
+        foreach ($children as $child) {
+            $this->printRawText(str_repeat("    ", $level));
+            $this->renderVar2($child, $level);
+        }
+    }
+
+    // TODO todel
     /**
      * Renders the var
      * @param array $tree var tree
@@ -934,31 +960,7 @@ class NcursesVarDump implements NcursesInterface
         ;
     }
 
-    /**
-     * Saves current position and add it to the end of the saved list
-     */
-    protected function pushPositionState()
-    {
-        $this->positionStateList[] = array(
-            "x" => $this->posX,
-            "y" => $this->posY
-        );
-    }
-
-    /**
-     * Restores last saved position and remove it from the saved list
-     */
-    protected function popPositionState()
-    {
-        $state = array_pop($this->positionStateList);
-
-        if (null === $state) {
-            return;
-        }
-
-        $this->setPositionXY($state["x"], $state["y"]);
-    }
-
+    // TODO todel
     /**
      * Prints a text. The text may contain color tags like "<<4>>" where "4" is the color number as declared by the VarDumpNcurses::COLOR_* constants.
      * @param string $text text to print
@@ -1130,32 +1132,6 @@ class NcursesVarDump implements NcursesInterface
     }
 
     /**
-     * Prints a text to the internal buffer
-     * @param string $text text to print
-     * @return int number of characters printed
-     */
-    protected function printRawTextInternal($text)
-    {
-        // creates required lines into the internal buffer
-        $text       = explode("\n", $text);
-        $lineCount  = count($text);
-
-        for ($line = $this->posY; $line < $this->posY + $lineCount; $line++) {
-            if (!array_key_exists($line, $this->internalWriteBuffer)) {
-                $this->internalWriteBuffer[$line] = "";
-            }
-        }
-
-        // write to the internal buffer
-        $i = 0;
-
-        for ($line = $this->posY; $line < $this->posY + $lineCount; $line++) {
-            $this->internalWriteBuffer[$line] .= $text[$i];
-            $i++;
-        }
-    }
-
-    /**
      * Indicates if a text is being pronted outside of the viewport
      * @param string $text text being printed
      * @return boolean
@@ -1172,6 +1148,13 @@ class NcursesVarDump implements NcursesInterface
         return false;
     }
 
+    // TODO
+    protected function isYPosBelowViewport()
+    {
+        return $this->posY - $this->decY >= $this->padHeight;
+    }
+
+    // TODO
     /**
      * Find non-clone object by its identifier
      * @param string $idObject
@@ -1205,6 +1188,7 @@ class NcursesVarDump implements NcursesInterface
         return false;
     }
 
+    // TODO
     /**
      * Expands an object and all of its ancestors (clones are ignored)
      * @param string $idObject object identifier
@@ -1248,30 +1232,20 @@ class NcursesVarDump implements NcursesInterface
     }
 
     /**
-     * Expands all elements
-     * @param array $tree tree to expand
+     * Expands a var and all of its children
+     * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $var var to expand
      */
-    protected function expandAll(array &$tree)
+    protected function expandAll(NcursesVarDumpTypeAbstract $var)
     {
-        if ("object" == $tree["type"] && !$tree["clone"]) {
-            // object type
-            $tree["expanded"] = true;
+        $var->expand();
+        $children = $var->getChildren();
 
-            // explore child elements
-            foreach ($tree["properties"] as &$property) {
-                $this->expandAll($property["value"]);
-            }
-        } elseif ("array" == $tree["type"]) {
-            // array type
-            $tree["expanded"] = true;
-
-            // explore child elements
-            foreach ($tree["children"] as &$child) {
-                $this->expandAll($child);
-            }
+        foreach ($children as $child) {
+            $this->expandAll($child);
         }
     }
 
+    // TODO
     /**
      * Returns the Y position of an object (original instance, clones are ignored)
      * @param string $idObject object identifier

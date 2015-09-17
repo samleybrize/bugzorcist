@@ -198,6 +198,8 @@ abstract class NcursesVarDumpTypeAbstract
     public function collapse($collapseChildren = false)
     {
         // collapse child elements
+        $children = null;
+
         if ($collapseChildren) {
             $children = $this->getChildren();
 
@@ -210,7 +212,7 @@ abstract class NcursesVarDumpTypeAbstract
         $this->isExpended = false;
 
         // notify parent, if any
-        if ($this->parent) {
+        if ($this->parent && empty($children)) {
             $this->parent->notifyChildModification($this);
         }
     }
@@ -256,20 +258,21 @@ abstract class NcursesVarDumpTypeAbstract
     }
 
     /**
-     * Returns cumulated string height of all children
+     * Returns cumulated string height of all children, only if expanded
+     * @param boolean $ifCollapsed [optional] calculate width if element is collapsed
      * @return number
      */
-    public function getChildrenHeight()
+    public function getChildrenHeight($ifCollapsed = false)
     {
-        if ($this->isExpanded()) {
+        if ($this->isExpanded() || $ifCollapsed) {
             // expanded
             // compute and cache
             if (null === $this->childrenHeightCache) {
-                $children   = $this->getChildren();
+                $children   = $this->getChildren($ifCollapsed);
                 $height     = 1;
 
                 foreach ($children as $child) {
-                    $height += $child->getStringHeight() + $child->getChildrenHeight();
+                    $height += $child->getStringHeight() + $child->getChildrenHeight($ifCollapsed);
                 }
 
                 $this->childrenHeightCache = $height;
@@ -283,23 +286,24 @@ abstract class NcursesVarDumpTypeAbstract
     }
 
     /**
-     * Returns cumulated string width of all children
+     * Returns cumulated string width of all children, only if expanded
+     * @param boolean $ifCollapsed [optional] calculate width if element is collapsed
      * @return number
      */
-    public function getChildrenWidth()
+    public function getChildrenWidth($ifCollapsed = false)
     {
-        if ($this->isExpanded()) {
+        if ($this->isExpanded() || $ifCollapsed) {
             // expanded
             // compute and cache
             if (null === $this->childrenWidthCache) {
-                $children   = $this->getChildren();
+                $children   = $this->getChildren($ifCollapsed);
                 $width      = 0;
 
                 foreach ($children as $child) {
                     $width = max(
                         $width,
                         $child->getStringWidth() + 4,
-                        $child->getChildrenWidth() + 4
+                        $child->getChildrenWidth($ifCollapsed) + 4
                     );
                 }
 
@@ -314,12 +318,17 @@ abstract class NcursesVarDumpTypeAbstract
     }
 
     /**
-     * Returns children elements
+     * Returns children elements, only if expanded
+     * @param boolean $ifCollapsed [optional] return children if element is collapsed
      * @return \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract[]
      */
-    public function getChildren()
+    public function getChildren($ifCollapsed = false)
     {
-        return $this->children;
+        if ($this->isExpanded() || $ifCollapsed) {
+            return $this->children;
+        }
+
+        return array();
     }
 
     /**

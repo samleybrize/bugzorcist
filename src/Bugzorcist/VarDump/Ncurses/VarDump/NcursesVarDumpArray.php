@@ -43,16 +43,4 @@ class NcursesVarDumpArray extends NcursesVarDumpTypeAbstract
             $this->addChild($wrapper);
         }
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getChildren()
-    {
-        if ($this->isExpanded()) {
-            return parent::getChildren();
-        }
-
-        return array();
-    }
 }
