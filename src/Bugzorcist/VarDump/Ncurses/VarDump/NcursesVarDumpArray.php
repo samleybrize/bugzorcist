@@ -31,9 +31,10 @@ class NcursesVarDumpArray extends NcursesVarDumpTypeAbstract
         $this->setExpandable(true);
 
         // render array
+        $isClone        = null !== $tree["refUid"];
         $strCollapsed   = "<<4>>array<<0>>(<<1>>{$tree["count"]}<<0>>) ";
         $strExpanded    = $strCollapsed;
-        $strCollapsed  .= "▸";
+        $strCollapsed  .= $isClone ? ">>" : "▸";
         $strExpanded   .= "▾";
 
         $this->setStringArrayCollapsed($this->buildTextArray($strCollapsed));
@@ -46,5 +47,24 @@ class NcursesVarDumpArray extends NcursesVarDumpTypeAbstract
             $wrapper    = new NcursesVarDumpTypeWrapper($child, $this, $key);
             $this->addChild($wrapper);
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getStringArray()
+    {
+        $strArray = parent::getStringArray();
+
+        // modify the color of the object id
+        if ($this->isHighlightedAsReferencer()) {
+            // this element is the one that point to another element
+            $strArray[2] = 26;
+        } elseif ($this->isHighlightedAsReferenced()) {
+            // this element is the referenced element
+            $strArray[2] = 27;
+        }
+
+        return $strArray;
     }
 }

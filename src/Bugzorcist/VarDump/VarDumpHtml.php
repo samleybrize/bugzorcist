@@ -139,8 +139,19 @@ class VarDumpHtml
 
             // array
             case "array":
+                // if this array instance has already been processed, we make a reference to it
+                if (array_key_exists($tree["refUid"], self::$objectIdList)) {
+                    $tree       = self::$objectIdList[$tree["refUid"]];
+                    $render     = "<span class='debugVarType debugToReference' debug-to-reference='{$tree["uid"]}' title='Go to referenced array'>array</span>(<span class='debugNumber'>{$tree["count"]}</span>)";
+                    $render    .= "<span class='debugReferenceIndicator'>&Gt;</span>";
+                    break;
+                }
+
+                // render array instance
+                self::$objectIdList[$tree["uid"]] = $tree;
+
                 $pad        = str_repeat("    ", $level);
-                $render    .= "<span class='debugVarType debugToggleDetails' title='Expand/collapse'>array</span>(<span class='debugNumber'>{$tree["count"]}</span>) ";
+                $render    .= "<span class='debugVarType debugToggleDetails' debug-reference='{$tree["uid"]}' title='Expand/collapse'>array</span>(<span class='debugNumber'>{$tree["count"]}</span>) ";
                 $render    .= "<span class='debugToggleIndicator'>&rtrif;</span>";
                 $render    .= "<span class='debugDetails'>";
 
@@ -154,19 +165,19 @@ class VarDumpHtml
             // object
             case "object":
                 // if this object instance has already been processed, we make a reference to it
-                if (array_key_exists($tree["id"], self::$objectIdList)) {
-                    $tree       = self::$objectIdList[$tree["id"]];
-                    $render     = "<span class='debugVarType debugToReference' debug-to-reference='{$tree["id"]}' title='Go to referenced object'>object</span>(<span class='debugClassName'>{$tree["class"]}</span>)";
+                if (array_key_exists($tree["refUid"], self::$objectIdList)) {
+                    $tree       = self::$objectIdList[$tree["refUid"]];
+                    $render     = "<span class='debugVarType debugToReference' debug-to-reference='{$tree["uid"]}' title='Go to referenced object'>object</span>(<span class='debugClassName'>{$tree["class"]}</span>)";
                     $render    .= "<span class='debugObjectId'>#{$tree["id"]}</span> (<span class='debugNumber'>{$tree["count"]}</span>) <span class='debugReferenceIndicator'>&Gt;</span>";
                     break;
                 }
 
                 // render object instance
-                self::$objectIdList[$tree["id"]] = $tree;
+                self::$objectIdList[$tree["uid"]] = $tree;
 
                 $pad        = str_repeat("    ", $level);
                 $render     = "<span class='debugVarType debugToggleDetails' title='Expand/collapse'>object</span>(<span class='debugClassName'>{$tree["class"]}</span>)";
-                $render    .= "<span class='debugObjectId' debug-reference='{$tree["id"]}'>#{$tree["id"]}</span> (<span class='debugNumber'>{$tree["count"]}</span>) ";
+                $render    .= "<span class='debugObjectId' debug-reference='{$tree["uid"]}'>#{$tree["id"]}</span> (<span class='debugNumber'>{$tree["count"]}</span>) ";
                 $render    .= "<span class='debugToggleIndicator'>&rtrif;</span>";
                 $render    .= "<span class='debugDetails'>";
 
@@ -241,7 +252,7 @@ class VarDumpHtml
 .debugTitle{cursor:pointer;background:#fce1e1;border:1px solid darkorange;border-left-width:4px;border-bottom:none;display:block;padding:5px;border-top-left-radius:2px;border-top-right-radius:2px;color:red;font-weight:bold}
 .debugStackTrace{background:#dae8ed;border:1px solid #97b5bf;border-left-width:4px;border-bottom:none;display:block;padding:5px}
 .debugContent{background:white;border:1px solid #999;border-left-width:4px;display:block;padding:8px;border-bottom-left-radius:2px;border-bottom-right-radius:2px}
-.debugVarType{color:#0000c4}
+.debugVarType{color:#0000c4;transition:background 0.4s ease,color 0.4s ease}
 .debugKeyword{color:#007200}
 .debugString,.debugLongString{color:#c40000}
 .debugLongString{display:none}
@@ -359,7 +370,13 @@ function debugInit() {
         elementRef.addClass("debugReferenced");
 
         element.closest(".debug").find(".debugReference").removeClass("debugReference");
-        element.nextAll(".debugObjectId:eq(0)").addClass("debugReference");
+        var referencer = element.nextAll(".debugObjectId:eq(0)");
+
+        if (0 == referencer.length && element.is(".debugVarType")) {
+            referencer = element;
+        }
+
+        referencer.addClass("debugReference");
 
         // scroll to referenced element
         jQuery("html, body").animate({

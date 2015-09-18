@@ -11,12 +11,6 @@
 
 namespace Bugzorcist\VarDump;
 
-/*
- * TODO Known bug causing infinite loop :
- * $a = array();
- * $a[1] = &$a;
- */
-
 /**
  * Construct the tree representation of a var
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -30,13 +24,13 @@ class VarTree
     private $tree;
 
     /**
-     * Temp var used to hold references to object instances
+     * Temp var used to hold references to object/array instances
      * @var array
      */
     private $objectList = array();
 
     /**
-     * Temp var used to hold references to object trees
+     * Temp var used to hold references to object/array trees
      * @var array
      */
     private $objectTreeList = array();
@@ -106,8 +100,22 @@ class VarTree
 
             // array
             case "array":
-                $level["count"]     = count($var);
-                $level["children"]  = array();
+                // each instance cannot be processed twice
+                if (false !== ($ref = array_search($var, $this->objectList, true))) {
+                    // this instance has been processed previously
+                    // we simply keep a reference to it
+                    $level["count"]     = $this->objectTreeList[$ref]["count"];
+                    $level["refUid"]    = $this->objectTreeList[$ref]["uid"];
+                    $level["children"]  = array();
+
+                    return $level;
+                }
+
+                $this->objectList[]     = &$var;
+                $this->objectTreeList[] = &$level;
+                $level["count"]         = count($var);
+                $level["children"]      = array();
+                $level["refUid"]        = null;
 
                 foreach ($var as $k => $v) {
                     $level["children"][$k] = $this->makeTree($v);
@@ -117,11 +125,10 @@ class VarTree
             // object
             case "object":
                 // each instance cannot be processed twice
-                $level["id"]            = spl_object_hash($var);
-
                 if (false !== ($ref = array_search($var, $this->objectList, true))) {
                     // this instance has been processed previously
                     // we simply keep a reference to it
+                    $level["id"]        = $this->objectTreeList[$ref]["id"];
                     $level["class"]     = $this->objectTreeList[$ref]["class"];
                     $level["count"]     = $this->objectTreeList[$ref]["count"];
                     $level["refUid"]    = $this->objectTreeList[$ref]["uid"];
@@ -131,6 +138,7 @@ class VarTree
 
                 $this->objectList[]     = $var;
                 $this->objectTreeList[] = &$level;
+                $level["id"]            = spl_object_hash($var);
                 $level["class"]         = get_class($var);
                 $level["count"]         = 0;
                 $level["properties"]    = array();
