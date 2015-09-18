@@ -11,7 +11,10 @@
 
 namespace Bugzorcist\VarDump\Ncurses\VarDump;
 
-// TODO comment
+/**
+ * Ncurses abstract var type
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 abstract class NcursesVarDumpTypeAbstract
 {
     /**

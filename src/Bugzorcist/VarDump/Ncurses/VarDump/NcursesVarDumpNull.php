@@ -11,6 +11,10 @@
 
 namespace Bugzorcist\VarDump\Ncurses\VarDump;
 
+/**
+ * Ncurses null var type
+ * @author Stephen Berquet <stephen.berquet@gmail.com>
+ */
 class NcursesVarDumpNull extends NcursesVarDumpTypeAbstract
 {
     /**
