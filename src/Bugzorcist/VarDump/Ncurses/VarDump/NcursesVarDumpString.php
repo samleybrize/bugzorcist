@@ -18,7 +18,6 @@ class NcursesVarDumpString extends NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        // TODO unselectable lines
         // TODO search
         if ("string" != $tree["type"]) {
             throw new \InvalidArgumentException("Invalid var tree given, expected 'string'");

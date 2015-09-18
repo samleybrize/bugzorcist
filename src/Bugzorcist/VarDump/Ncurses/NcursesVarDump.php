@@ -25,14 +25,9 @@ class NcursesVarDump implements NcursesInterface
     const COLOR_REF_OBJECT_DST  = 27;
     const COLOR_SEARCH_MATCH    = 28;
 
-    // TODO todel
     /**
-     * Var tree
-     * @var array
+     * @var \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract
      */
-    private $varTree;
-
-    // TODO
     private $var;
 
     /**
@@ -150,20 +145,6 @@ class NcursesVarDump implements NcursesInterface
      */
     private $highlightRefYList = array();
 
-    // TODO todel
-    /**
-     * Indicates if internal write buffer is enabled
-     * @var boolean
-     */
-    private $internalWriteEnabled = false;
-
-    // TODO todel
-    /**
-     * Internal write buffer
-     * @var array
-     */
-    private $internalWriteBuffer = array();
-
     /**
      * List of colors that must be displayed as bold text
      * @var array
@@ -224,8 +205,7 @@ class NcursesVarDump implements NcursesInterface
     public function __construct($var, $padPositionX, $padPositionY)
     {
         $varTree                = new VarTree($var);
-        $this->varTree          = $varTree->getTree(); // TODO todel
-        $this->var              = NcursesVarDumpTypeAbstract::factory($this->varTree);
+        $this->var              = NcursesVarDumpTypeAbstract::factory($varTree->getTree());
         $this->padPositionX     = (int) $padPositionX;
         $this->padPositionY     = (int) $padPositionY;
     }
@@ -589,7 +569,7 @@ class NcursesVarDump implements NcursesInterface
         ncurses_werase($this->pad);
         $this->setPositionXY(0, 0);
 
-        $this->maxY                     = $this->var->getStringHeight() + $this->var->getChildrenHeight(); // TODO problem
+        $this->maxY                     = $this->var->getStringHeight() + $this->var->getChildrenHeight();
         $this->expandableList           = array();
         $this->highlightRefYList        = array();
 
@@ -690,14 +670,13 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function renderVar2(NcursesVarDumpTypeAbstract $var, $level = 0)
     {
-        if ($this->isBeingPrintedOutside2($var->getStringHeight() + $var->getChildrenHeight())) {
+        // verify if the entire element (string + children) will be printed outside of the viewport
+        $totalHeight = $var->getStringHeight() + $var->getChildrenHeight();
+
+        if ($this->isBeingPrintedOutside($totalHeight)) {
+            $this->addPosition(0, $totalHeight);
             return;
         }
-
-        $strArray   = $var->getStringArray();
-        $children   = $var->getChildren();
-        $color      = null;
-        $str        = null;
 
         // add var to expandable list
         if ($var->isExpandable()) {
@@ -705,25 +684,43 @@ class NcursesVarDump implements NcursesInterface
         }
 
         // render string
-        foreach ($strArray as $v) {
-            if (null === $color) {
-                $color = $v;
-                continue;
+        $strHeight = $var->getStringHeight();
+
+        if (!$this->isBeingPrintedOutside($strHeight)) {
+            $strArray   = $var->getStringArray();
+            $color      = null;
+            $str        = null;
+            $this->printRawText(str_repeat("    ", $level));
+
+            foreach ($strArray as $v) {
+                if (null === $color) {
+                    $color = $v;
+                    continue;
+                }
+
+                $str = $v;
+                $this->printRawText($str, $color);
+
+                $str    = null;
+                $color  = null;
+
             }
 
-            $str = $v;
-            $this->printRawText($str, $color);
-
-            $str    = null;
-            $color  = null;
+            // in case of a multiline string, lines other than the first are marked as unselectable
+            if ($strHeight > 1) {
+                for ($i = $this->posY + 1; $i <= $this->posY + ($strHeight - 1); $i++) {
+                    $this->highlightRefYList[$i] = $this->posY;
+                }
+            }
         }
 
         $this->addPosition(0, $var->getStringHeight());
         $level++;
 
         // render children
+        $children = $var->getChildren();
+
         foreach ($children as $child) {
-            $this->printRawText(str_repeat("    ", $level));
             $this->renderVar2($child, $level);
         }
     }
@@ -1116,9 +1113,30 @@ class NcursesVarDump implements NcursesInterface
             $bold = true;
         }
 
-        // print the text
-        ncurses_wcolor_set($this->pad, $color);
-        ncurses_waddstr($this->pad, $text);
+        // print the text line by line
+        // each line is checked for its visibility
+        // we save the current Y position to be able to restore it
+        $lines  = explode("\n", $text);
+        $nLines = count($lines);
+        $posY   = $this->posY;
+
+        foreach ($lines as $k => $line) {
+            if ($this->isBeingPrintedOutside(1)) {
+                // the line is outside of the viewport
+                // we increment the current Y position and skip drawing it
+                $this->posY++;
+                continue;
+            } elseif ($k !== ($nLines - 1)) {
+                // re-add the newline character for each line but the last
+                $line .= "\n";
+            }
+
+            ncurses_wcolor_set($this->pad, $color);
+            ncurses_waddstr($this->pad, $line);
+            $this->posY++;
+        }
+
+        $this->posY = $posY;
 
         // unbold
         if ($bold) {
@@ -1128,41 +1146,22 @@ class NcursesVarDump implements NcursesInterface
         return strlen($text);
     }
 
-    // TODO todel
     /**
      * Indicates if a text is being pronted outside of the viewport
-     * @param string $text text being printed
+     * @param int $textHeight height of the text being printed (number of lines)
      * @return boolean
      */
-    protected function isBeingPrintedOutside($text)
+    protected function isBeingPrintedOutside($textHeight)
     {
-        $posMin = $this->posY;
-        $posMax = $this->posY + substr_count($text, "\n");
+        $textHeight = max(0, $textHeight - 1);
+        $posMin     = $this->posY;
+        $posMax     = $this->posY + $textHeight;
 
         if ($posMin - $this->decY >= $this->padHeight || $posMax - $this->decY < 0) {
             return true;
         }
 
         return false;
-    }
-
-    // TODO
-    protected function isBeingPrintedOutside2($textHeight)
-    {
-        $posMin = $this->posY;
-        $posMax = $this->posY + $textHeight;
-
-        if ($posMin - $this->decY >= $this->padHeight || $posMax - $this->decY < 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    // TODO
-    protected function isYPosBelowViewport()
-    {
-        return $this->posY - $this->decY >= $this->padHeight;
     }
 
     // TODO
