@@ -31,12 +31,6 @@ class NcursesVarDump implements NcursesInterface
     private $var;
 
     /**
-     * Temp var used to hold references to object instances
-     * @var array
-     */
-    private $objectIdList = array();
-
-    /**
      * Ncurses pad
      * @var resource
      */
@@ -155,16 +149,22 @@ class NcursesVarDump implements NcursesInterface
     );
 
     /**
-     * UID of last clicked clone object
-     * @var string
+     * Last clicked element that points to another element
+     * @var \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract
      */
-    private $cloneObjectUidSrc;
+    private $highlightedReferencer;
 
     /**
-     * UID of last clicked clone object's referenced object
-     * @var string
+     * Last clicked element that is a referenced element
+     * @var \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract
      */
-    private $cloneObjectUidDst;
+    private $highlightedReferenced;
+
+    /**
+     * Indicates if printing is disabled
+     * @var boolean
+     */
+    private $disablePrint = false;
 
     /**
      * Text to search
@@ -366,30 +366,41 @@ class NcursesVarDump implements NcursesInterface
             case 13:
                 // expand array/object/string
                 if (array_key_exists($this->highlightedPositionY, $this->expandableList)) {
-                    $element = $this->expandableList[$this->highlightedPositionY];
+                    $element    = $this->expandableList[$this->highlightedPositionY];
+                    $refUid     = $element->getRefUid();
 
-                    // TODO
-                    if (0 && array_key_exists("clone", $element) && $element["clone"]) {
-                        // cloned element
-                        // expand all elements from referenced object to root
+                    if ($element->getRefUid()) {
+                        // element that refers to another
+                        // find referenced element and expand it
+                        $refTree = $this->var->findUid($refUid);
 
-                        if (!$this->expandFromReferencedObjectToRoot($element["id"], $this->varTree)) {
+                        if (false === $refTree) {
                             return;
                         }
 
-                        $this->refresh();
+                        $refTree->expand(true);
 
-                        // find found object's new y position
-                        $dstY = $this->getObjectPositionY($element["id"]);
+                        // refresh to update elements positions
+                        $this->disablePrint = true;
+                        $this->refresh();
+                        $this->disablePrint = false;
+                        $dstY = $refTree->getLastPosY();
 
                         // goto to y position
                         if (false !== $dstY) {
                             $this->gotoPositionY($dstY);
                         }
 
-                        // hold UIDs for highlighting
-                        $this->cloneObjectUidSrc = $element["uid"];
-                        $this->cloneObjectUidDst = $this->findReferencedObject($element["id"], $this->varTree);
+                        // hold elements for highlighting
+                        if ($this->highlightedReferencer) {
+                            $this->highlightedReferencer->highlightAsReferencer(false);
+                            $this->highlightedReferenced->highlightAsReferenced(false);
+                        }
+
+                        $element->highlightAsReferencer(true);
+                        $refTree->highlightAsReferenced(true);
+                        $this->highlightedReferencer = $element;
+                        $this->highlightedReferenced = $refTree;
                     } else {
                         // regular element
                         $element->toggleExpand();
@@ -556,6 +567,7 @@ class NcursesVarDump implements NcursesInterface
      */
     public function refresh()
     {
+        // create ncurses pad and define some colors
         if (null === $this->pad) {
             $this->createPad();
             ncurses_init_pair(self::COLOR_REF_OBJECT_SRC, NCURSES_COLOR_BLACK, NCURSES_COLOR_YELLOW);
@@ -566,26 +578,32 @@ class NcursesVarDump implements NcursesInterface
             ncurses_init_pair(self::COLOR_SEARCH_MATCH + 10, NCURSES_COLOR_BLACK, NCURSES_COLOR_CYAN);
         }
 
-        ncurses_werase($this->pad);
+        // clear pad
+        if (!$this->disablePrint) {
+            ncurses_werase($this->pad);
+        }
+
+        // render var
         $this->setPositionXY(0, 0);
 
         $this->maxY                     = $this->var->getStringHeight() + $this->var->getChildrenHeight();
         $this->expandableList           = array();
         $this->highlightRefYList        = array();
 
-        $this->objectIdList = array();
-        $locale             = setlocale(LC_NUMERIC, 0);
+        $locale = setlocale(LC_NUMERIC, 0);
         setlocale(LC_NUMERIC, "C");
-        $this->renderVar2($this->var);
+        $this->renderVar($this->var);
         setlocale(LC_NUMERIC, $locale);
-        $this->objectIdList = array();
 
-        ncurses_prefresh(
-            $this->pad,
-            0, $this->decX,
-            $this->padPositionY, $this->padPositionX,
-            $this->padHeight + $this->padPositionY - 1, $this->padWidth - 1
-        );
+        // refresh ncurses pad
+        if (!$this->disablePrint) {
+            ncurses_prefresh(
+                $this->pad,
+                0, $this->decX,
+                $this->padPositionY, $this->padPositionX,
+                $this->padHeight + $this->padPositionY - 1, $this->padWidth - 1
+            );
+        }
 
         $this->refreshSearchPad();
     }
@@ -668,8 +686,10 @@ class NcursesVarDump implements NcursesInterface
      * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $var var to render
      * @param int $level [optional] depth level
      */
-    protected function renderVar2(NcursesVarDumpTypeAbstract $var, $level = 0)
+    protected function renderVar(NcursesVarDumpTypeAbstract $var, $level = 0)
     {
+        $var->setLastPosY($this->posY);
+
         // verify if the entire element (string + children) will be printed outside of the viewport
         $totalHeight = $var->getStringHeight() + $var->getChildrenHeight();
 
@@ -721,187 +741,7 @@ class NcursesVarDump implements NcursesInterface
         $children = $var->getChildren();
 
         foreach ($children as $child) {
-            $this->renderVar2($child, $level);
-        }
-    }
-
-    // TODO todel
-    /**
-     * Renders the var
-     * @param array $tree var tree
-     * @param int $level [optional] depth level
-     * @throws \UnexpectedValueException
-     */
-    protected function renderVar(&$tree, $level = 0)
-    {
-        switch ($tree["type"]) {
-            // string
-            case "string":
-                // make expandable
-                if (!array_key_exists("expanded", $tree)) {
-                    $tree["expanded"] = false;
-                }
-
-                $this->expandableList[$this->posY] = &$tree;
-
-                // limits string length
-                $limit      = strpos($tree["value"], "\n");
-                $limit      = false !== $limit ? $limit : $tree["length"];
-                $string     = $tree["value"];
-                $symbol     = null;
-
-                if ($tree["length"] > $limit && !$tree["expanded"] && !$this->internalWriteEnabled) {
-                    $symbol     = " ▸";
-                    $string     = substr($tree["value"], 0, $limit) . "...";
-                    $render     = "<<4>>string<<0>>(<<1>>{$tree["length"]}<<0>>) ";
-                } else {
-                    $render     = "<<4>>string<<0>>(<<1>>{$tree["length"]}<<0>>) ";
-                }
-
-                // render string
-                $written    = $this->printText($render, $tree["uid"]);
-                $newlines   = substr_count($string, "\n");
-                $this->addPosition($written, 0);
-                $this->printText("<<1>>\"$string\"<<0>>");
-
-                if ($symbol) {
-                    $this->printRawText($symbol, VarDumpNcurses::COLOR_DEFAULT);
-                }
-
-                for ($i = $this->posY + 1; $i <= $this->posY + $newlines; $i++) {
-                    // in case of a multiline string, lines other than the first are marked as unselectable
-                    $this->highlightRefYList[$i] = $this->posY;
-                }
-
-                $this->addPosition(0, 1 + $newlines);
-                break;
-
-            // number
-            case "integer":
-            case "long":
-            case "float":
-            case "double":
-                $render = "<<4>>{$tree["type"]}<<0>>(<<1>>{$tree["value"]}<<0>>)";
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-                break;
-
-            // boolean
-            case "bool":
-            case "boolean":
-                $render = "<<4>>bool<<0>>(<<2>>{$tree["value"]}<<0>>)";
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-                break;
-
-            // null
-            case "null":
-            case "NULL":
-                $render = "<<2>>null";
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-                break;
-
-            // resource
-            case "resource":
-                $render = "<<4>>resource<<0>>({$tree["value"]})";
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-                break;
-
-            // array
-            case "array":
-                // make expandable
-                if (!array_key_exists("expanded", $tree)) {
-                    $tree["expanded"] = false;
-                }
-
-                $this->expandableList[$this->posY] = &$tree;
-
-                // render array
-                $pad        = str_repeat(" ", $level * 4);
-                $render     = "<<4>>array<<0>>(<<1>>{$tree["count"]}<<0>>) ";
-                $render    .= $tree["expanded"] ? "▾" : "▸";
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-
-                if ($tree["expanded"] || $this->internalWriteEnabled) {
-                    foreach ($tree["children"] as $k => $v) {
-                        $this->setPositionX(0);
-
-                        $render = "$pad    [$k] = ";
-                        $this->printText($render, $tree["uid"]);
-                        $this->addPosition(strlen($render), 0);
-
-                        $this->renderVar($tree["children"][$k], $level + 1);
-                        $this->addPosition(-$pad - strlen($render), 0);
-                    }
-                }
-
-                break;
-
-            // object
-            case "object":
-                // if this object instance has already been processed, we copy it
-                if (!array_key_exists("class", $tree) && array_key_exists($tree["id"], $this->objectIdList)) {
-                    $ref                = $this->objectIdList[$tree["id"]];
-                    $tree["class"]      = $ref["class"];
-                    $tree["count"]      = $ref["count"];
-                    $tree["clone"]      = true;
-                    $tree["expanded"]   = false;
-                } elseif (!array_key_exists("clone", $tree)) {
-                    // mark as not cloned
-                    $tree["clone"]      = false;
-                }
-
-                // make expandable
-                if (!array_key_exists("expanded", $tree)) {
-                    $tree["expanded"] = false;
-                }
-
-                $this->expandableList[$this->posY] = &$tree;
-
-                // render object instance
-                $this->objectIdList[$tree["id"]]    = $tree;
-                $idColor                            = 6;
-
-                if ($this->cloneObjectUidSrc === $tree["uid"]) {
-                    $idColor = self::COLOR_REF_OBJECT_SRC;
-                } elseif ($this->cloneObjectUidDst === $tree["uid"]) {
-                    $idColor = self::COLOR_REF_OBJECT_DST;
-                }
-
-                $pad        = str_repeat(" ", $level * 4);
-                $rightArrow = $tree["clone"] ? ">>" : "▸";
-                $render     = "<<4>>object<<0>>(<<5>>{$tree["class"]}<<0>>)";
-                $render    .= "<<$idColor>>#{$tree["id"]}<<0>> (<<1>>{$tree["count"]}<<0>>) ";
-                $render    .= ($tree["expanded"] && !$tree["clone"]) ? "▾" : $rightArrow;
-                $this->printText($render, $tree["uid"]);
-                $this->addPosition(0, 1);
-
-                if (($tree["expanded"] || $this->internalWriteEnabled) && !$tree["clone"]) {
-                    foreach ($tree["properties"] as $k => $v) {
-                        $this->setPositionX(0);
-
-                        $class      = $v["class"] ? "<<5>>{$v["class"]}:<<0>>" : "";
-                        $key        = $v["static"] ?
-                            "<<2>>static:<<3>>{$v["access"]}:<<0>>{$class}{$v["name"]}" :
-                            "<<3>>{$v["access"]}:<<0>>{$v["name"]}"
-                        ;
-                        $render     = "$pad    [$key] = ";
-                        $written    = $this->printText($render, $tree["uid"]);
-                        $this->addPosition($written, 0);
-
-                        $this->renderVar($tree["properties"][$k]["value"], $level + 1);
-                        $this->addPosition(-$pad - strlen($render), 0);
-                    }
-                }
-
-                break;
-
-            // unknown type
-            default:
-                throw new \UnexpectedValueException("Unknown var type '{$level["type"]}'");
+            $this->renderVar($child, $level);
         }
     }
 
@@ -1100,6 +940,10 @@ class NcursesVarDump implements NcursesInterface
      */
     protected function printRawText($text, $color = VarDumpNcurses::COLOR_DEFAULT)
     {
+        if ($this->disablePrint) {
+            return;
+        }
+
         // if the line being printed is the one pointed by the cursor, highlight it
         if ($this->posY == $this->highlightedPositionY && $this->cursorHighlight) {
             $color += 10;
@@ -1164,83 +1008,6 @@ class NcursesVarDump implements NcursesInterface
         return false;
     }
 
-    // TODO
-    /**
-     * Find non-clone object by its identifier
-     * @param string $idObject
-     * @param array $tree tree to search in
-     * @return string found object UID
-     */
-    protected function findReferencedObject($idObject, array $tree)
-    {
-        if ("object" == $tree["type"] && !$tree["clone"]) {
-            // check if it is the searched object
-            if ($idObject === $tree["id"]) {
-                // object found
-                return $tree["uid"];
-            } else {
-                // explore child elements
-                foreach ($tree["properties"] as &$property) {
-                    if ($uid = $this->findReferencedObject($idObject, $property["value"])) {
-                        return $uid;
-                    }
-                }
-            }
-        } elseif ("array" == $tree["type"]) {
-            // explore child elements
-            foreach ($tree["children"] as &$child) {
-                if ($uid = $this->findReferencedObject($idObject, $child)) {
-                    return $uid;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // TODO
-    /**
-     * Expands an object and all of its ancestors (clones are ignored)
-     * @param string $idObject object identifier
-     * @param array $tree tree to search in
-     * @return boolean
-     */
-    protected function expandFromReferencedObjectToRoot($idObject, array &$tree)
-    {
-        $found = false;
-
-        if ("object" == $tree["type"] && !$tree["clone"]) {
-            // check if it is the searched object
-            if ($idObject === $tree["id"]) {
-                // object found
-                $found = true;
-            } else {
-                // explore child elements
-                foreach ($tree["properties"] as &$property) {
-                    if ($this->expandFromReferencedObjectToRoot($idObject, $property["value"])) {
-                        $found = true;
-                        break;
-                    }
-                }
-            }
-        } elseif ("array" == $tree["type"]) {
-            // explore child elements
-            foreach ($tree["children"] as &$child) {
-                if ($this->expandFromReferencedObjectToRoot($idObject, $child)) {
-                    $found = true;
-                    break;
-                }
-            }
-        }
-
-        // expand if object found in one of its child elements
-        if ($found) {
-            $tree["expanded"] = true;
-        }
-
-        return $found;
-    }
-
     /**
      * Expands a var and all of its children
      * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $var var to expand
@@ -1253,24 +1020,6 @@ class NcursesVarDump implements NcursesInterface
         foreach ($children as $child) {
             $this->expandAll($child);
         }
-    }
-
-    // TODO
-    /**
-     * Returns the Y position of an object (original instance, clones are ignored)
-     * @param string $idObject object identifier
-     */
-    protected function getObjectPositionY($idObject)
-    {
-        foreach ($this->expandableList as $y => $expandable) {
-            if ("object" !== $expandable["type"] || $idObject !== $expandable["id"] || $expandable["clone"]) {
-                continue;
-            }
-
-            return $y;
-        }
-
-        return false;
     }
 
     /**

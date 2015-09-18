@@ -159,6 +159,56 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getRefUid()
+    {
+        return $this->wrapped->getRefUid();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUid()
+    {
+        return $this->wrapped->getUid();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isHighlightedAsReference()
+    {
+        return $this->wrapped->isHighlightedAsReference();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isHighlightedAsReferenced()
+    {
+        return $this->wrapped->isHighlightedAsReferenced();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function highlightAsReferencer($highlight)
+    {
+        $this->wrapped->highlightAsReferencer($highlight);
+        $this->notifyChildModification($this);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function highlightAsReferenced($highlight)
+    {
+        $this->wrapped->highlightAsReferenced($highlight);
+        $this->notifyChildModification($this);
+    }
+
+    /**
      * Clears caches
      */
     protected function clearCaches()

@@ -36,13 +36,20 @@ class VarTree
     private $objectList = array();
 
     /**
+     * Temp var used to hold references to object trees
+     * @var array
+     */
+    private $objectTreeList = array();
+
+    /**
      * Constructor
      * @param mixed $var var for which to build a tree
      */
     public function __construct($var)
     {
-        $this->tree         = $this->makeTree($var);
-        $this->objectList   = array();
+        $this->tree             = $this->makeTree($var);
+        $this->objectList       = array();
+        $this->objectTreeList   = array();
     }
 
     /**
@@ -112,14 +119,22 @@ class VarTree
                 // each instance cannot be processed twice
                 $level["id"]            = spl_object_hash($var);
 
-                if (in_array($var, $this->objectList, true)) {
+                if (false !== ($ref = array_search($var, $this->objectList, true))) {
+                    // this instance has been processed previously
+                    // we simply keep a reference to it
+                    $level["class"]     = $this->objectTreeList[$ref]["class"];
+                    $level["count"]     = $this->objectTreeList[$ref]["count"];
+                    $level["refUid"]    = $this->objectTreeList[$ref]["uid"];
+
                     return $level;
                 }
 
                 $this->objectList[]     = $var;
+                $this->objectTreeList[] = &$level;
                 $level["class"]         = get_class($var);
                 $level["count"]         = 0;
                 $level["properties"]    = array();
+                $level["refUid"]        = null;
                 $propertyHashList       = array();
                 $isParentClass          = false;
                 $reflection             = new \ReflectionObject($var);

@@ -27,6 +27,18 @@ abstract class NcursesVarDumpTypeAbstract
     private $parent;
 
     /**
+     * Unique identifier
+     * @var string
+     */
+    private $uid;
+
+    /**
+     * UID of the referenced element
+     * @var string
+     */
+    private $refUid;
+
+    /**
      * Indicates if this element is expandable
      * @var boolean
      */
@@ -85,6 +97,24 @@ abstract class NcursesVarDumpTypeAbstract
      * @var int
      */
     private $childrenWidthCache;
+
+    /**
+     * Last known Y position
+     * @var int
+     */
+    private $lastPosY = 0;
+
+    /**
+     * Indicates if this element is a referencer
+     * @var boolean
+     */
+    private $highlightAsReferencer = false;
+
+    /**
+     * Indicates if this element is a referenced element
+     * @var boolean
+     */
+    private $highlightAsReferenced = false;
 
     /**
      * Creates a var type object based on a var tree
@@ -150,7 +180,9 @@ abstract class NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        $this->parent = $parent;
+        $this->parent   = $parent;
+        $this->uid      = array_key_exists("uid", $tree) ? $tree["uid"] : null;
+        $this->refUid   = array_key_exists("refUid", $tree) ? $tree["refUid"] : null;
     }
 
     /**
@@ -177,7 +209,7 @@ abstract class NcursesVarDumpTypeAbstract
     public function expand($expandParents = false)
     {
         if ($this->isExpandable()) {
-            $this->isExpended = true;
+            $this->isExpended = (null === $this->refUid) ? true : false;
 
             // notify parent, if any
             if ($this->parent) {
@@ -185,7 +217,7 @@ abstract class NcursesVarDumpTypeAbstract
 
                 // expand parent
                 if ($expandParents) {
-                    $this->parent->expand();
+                    $this->parent->expand(true);
                 }
             }
         }
@@ -343,6 +375,100 @@ abstract class NcursesVarDumpTypeAbstract
         if ($this->parent) {
             $this->parent->notifyChildModification($this);
         }
+    }
+
+    /**
+     * Returns the UID
+     * @return string
+     */
+    public function getUid()
+    {
+        return $this->uid;
+    }
+
+    /**
+     * Returns the UID of the referenced element
+     * @return string
+     */
+    public function getRefUid()
+    {
+        return $this->refUid;
+    }
+
+    /**
+     * Finds an element by its uid
+     * @param string $uid
+     * @return \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract|false
+     */
+    public function findUid($uid)
+    {
+        if ($this->getUid() == $uid) {
+            return $this;
+        }
+
+        foreach ($this->children as $child) {
+            if (false !== ($found = $child->findUid($uid))) {
+                return $found;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns last known Y position
+     * @return int
+     */
+    public function getLastPosY()
+    {
+        return $this->lastPosY;
+    }
+
+    /**
+     * Sets last known Y position
+     * @param int $pos
+     */
+    public function setLastPosY($pos)
+    {
+        $this->lastPosY = (int) $pos;
+    }
+
+    /**
+     * Indicates if this element is a referencer
+     * @return boolean
+     */
+    public function isHighlightedAsReferencer()
+    {
+        return $this->highlightAsReferencer;
+    }
+
+    /**
+     * Indicates if this element is a referenced element
+     * @return boolean
+     */
+    public function isHighlightedAsReferenced()
+    {
+        return $this->highlightAsReferenced;
+    }
+
+    /**
+     * Sets if this element is a referencer
+     * @param boolean $highlight
+     */
+    public function highlightAsReferencer($highlight)
+    {
+        $this->highlightAsReferencer = (bool) $highlight;
+        $this->notifyChildModification($this);
+    }
+
+    /**
+     * Sets if this element is a referenced element
+     * @param boolean $highlight
+     */
+    public function highlightAsReferenced($highlight)
+    {
+        $this->highlightAsReferenced = (bool) $highlight;
+        $this->notifyChildModification($this);
     }
 
     /**
