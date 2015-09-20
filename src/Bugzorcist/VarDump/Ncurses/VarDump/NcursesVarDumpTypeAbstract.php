@@ -11,6 +11,7 @@
 
 namespace Bugzorcist\VarDump\Ncurses\VarDump;
 
+// TODO search/object id highlight problem
 /**
  * Ncurses abstract var type
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -120,6 +121,18 @@ abstract class NcursesVarDumpTypeAbstract
     private $highlightAsReferenced = false;
 
     /**
+     * Text to search
+     * @var string|null
+     */
+    private $searchText;
+
+    /**
+     * String array with highlighted text search
+     * @var array|null
+     */
+    private $strArraySearch;
+
+    /**
      * Creates a var type object based on a var tree
      * @param array $tree
      * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $parent [optional] parent element
@@ -213,6 +226,7 @@ abstract class NcursesVarDumpTypeAbstract
     {
         if ($this->isExpandable()) {
             $this->isExpended = (null === $this->refUid) ? true : false;
+            $this->rebuildStringArraySearch();
 
             // notify parent, if any
             if ($this->parent) {
@@ -245,6 +259,7 @@ abstract class NcursesVarDumpTypeAbstract
 
         // collapse element
         $this->isExpended = false;
+        $this->rebuildStringArraySearch();
 
         // notify parent, if any
         if ($this->parent && empty($children)) {
@@ -265,13 +280,37 @@ abstract class NcursesVarDumpTypeAbstract
     }
 
     /**
-     * Returns string array.
+     * Returns string array, depending on whether the element is expanded or not.
      * Even indexes contains color codes, odd indexes contains texts.
      * @return array
      */
     public function getStringArray()
     {
+        if (null !== $this->strArraySearch) {
+            return $this->strArraySearch;
+        }
+
         return $this->isExpanded() ? $this->strArrayExpended : $this->strArrayCollapsed;
+    }
+
+    /**
+     * Returns string array (collapsed state).
+     * Even indexes contains color codes, odd indexes contains texts.
+     * @return array
+     */
+    public function getStringArrayCollapsed()
+    {
+        return $this->strArrayCollapsed;
+    }
+
+    /**
+     * Returns string array (expanded state).
+     * Even indexes contains color codes, odd indexes contains texts.
+     * @return array
+     */
+    public function getStringArrayExpanded()
+    {
+        return $this->strArrayExpended;
     }
 
     /**
@@ -375,6 +414,7 @@ abstract class NcursesVarDumpTypeAbstract
         $this->childrenHeightCache  = null;
         $this->childrenWidthCache   = null;
 
+        // notify parents
         if ($this->parent) {
             $this->parent->notifyChildModification($this);
         }
@@ -409,7 +449,9 @@ abstract class NcursesVarDumpTypeAbstract
             return $this;
         }
 
-        foreach ($this->children as $child) {
+        $children = $this->getChildren(true);
+
+        foreach ($children as $child) {
             if (false !== ($found = $child->findUid($uid))) {
                 return $found;
             }
@@ -461,6 +503,7 @@ abstract class NcursesVarDumpTypeAbstract
     public function highlightAsReferencer($highlight)
     {
         $this->highlightAsReferencer = (bool) $highlight;
+        $this->rebuildStringArraySearch();
         $this->notifyChildModification($this);
     }
 
@@ -471,7 +514,167 @@ abstract class NcursesVarDumpTypeAbstract
     public function highlightAsReferenced($highlight)
     {
         $this->highlightAsReferenced = (bool) $highlight;
+        $this->rebuildStringArraySearch();
         $this->notifyChildModification($this);
+    }
+
+    /**
+     * Search a text in element's string array and all of its children.
+     * Returns all matched elements.
+     * @param string $searchText text to search
+     * @return \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract[]
+     */
+    public function searchText($searchText)
+    {
+        $foundElementList   = array();
+        $this->searchText   = $searchText;
+
+        // search text
+        $found = null !== $this->strArraySearch;
+
+        if (!$found) {
+            // if no match is found on expanded text then we assume no match
+            // unless element is not expandable
+            // this is necessary for some elements (eg: multiline string)
+            $isExpandable   = $this->isExpandable();
+            $strArray       = $isExpandable ? $this->getStringArrayExpanded() : $this->getStringArrayCollapsed();
+            $strArraySearch = $this->searchInStringArray($strArray, $searchText);
+
+            if ($strArraySearch !== $strArray) {
+                // at least one occurence was found
+                $found                  = true;
+                $this->strArraySearch   = $strArraySearch;
+
+                // if element is expandable but not expanded, compute its collapsed version
+                if ($isExpandable && !$this->isExpanded()) {
+                    $this->strArraySearch = $this->searchInStringArray($this->getStringArrayCollapsed(), $searchText);
+                }
+            }
+        }
+
+        if ($found) {
+            $foundElementList[] = $this;
+        }
+
+        // search in children
+        $children = $this->getChildren(true);
+
+        foreach ($children as $child) {
+            $foundElementList = array_merge($foundElementList, $child->searchText($searchText));
+        }
+
+        return $foundElementList;
+    }
+
+    /**
+     * Clear search state of this element and all of its children
+     */
+    public function clearSearch()
+    {
+        $this->searchText       = null;
+        $this->strArraySearch   = null;
+        $children               = $this->getChildren(true);
+
+        foreach ($children as $child) {
+            $child->clearSearch();
+        }
+    }
+
+    /**
+     * Search a text in a string array
+     * @param array $stringArray string array to search in
+     * @param string $searchText text to search
+     * @return array string array with highlighted search text
+     */
+    protected function searchInStringArray(array $stringArray, $searchText)
+    {
+        $searchStart        = 0;
+        $stringInline       = $this->stringArrayToString($this->getStringArray());
+        $stringInlineLength = strlen($stringInline);
+
+        while (
+            null !== $searchText &&
+            "" !== $searchText &&
+            $searchStart <= $stringInlineLength &&
+            false !== ($searchPos = stripos($stringInline, $searchText, $searchStart))
+        ) {
+            // found text
+            $curPos             = 0;
+            $searchLength       = strlen($searchText);
+            $replaceList        = array();
+            $color              = null;
+
+            // identify pieces that match search text
+            // for the text search "rt", replacement is :
+            // aze[rt]y        => aze / rt / y
+            // aze[r] / [t]y   => aze / rt / y
+            foreach ($stringArray as $k => $text) {
+                // retrieve text color
+                if (null === $color) {
+                    $color = $text;
+                    continue;
+                }
+
+                // search and replace
+                $startKey   = $k - 1;
+                $tLength    = strlen($text);
+
+                if ($searchPos >= $curPos && $searchPos < $curPos + $tLength) {
+                    $found          = substr($text, $searchPos - $curPos, $searchLength);
+                    $foundLength    = strlen($found);
+                    $pre            = substr($text, 0, $searchPos - $curPos);
+                    $post           = substr($text, $searchPos - $curPos + $foundLength);
+
+                    if (!array_key_exists($startKey, $replaceList)) {
+                        $replaceList[$startKey] = array();
+                    }
+
+                    // add text before match to replacement
+                    if ($pre) {
+                        $replaceList[$startKey][] = $color;
+                        $replaceList[$startKey][] = $pre;
+                    }
+
+                    // add matched text
+                    $replaceList[$startKey][] = 28;
+                    $replaceList[$startKey][] = $found;
+
+                    // add text after match to replacement
+                    if ($post) {
+                        $replaceList[$startKey][] = $color;
+                        $replaceList[$startKey][] = $post;
+                    }
+
+                    // for further processing
+                    $searchPos     += $foundLength;
+                    $searchLength  -= $foundLength;
+                }
+
+                if ($searchLength <= 0) {
+                    // there is no more text to search
+                    break;
+                }
+
+                $curPos    += $tLength;
+                $color      = null;
+            }
+
+            // do replacement
+            krsort($replaceList);
+
+            foreach ($replaceList as $k => $replace) {
+                $stringArray  = array_merge(
+                    array_slice($stringArray, 0, $k),
+                    $replace,
+                    array_slice($stringArray, $k + 2)
+                );
+            }
+
+            // to find next occurence in same text
+            $searchStart += $searchPos;
+        }
+
+        return $stringArray;
     }
 
     /**
@@ -659,5 +862,27 @@ abstract class NcursesVarDumpTypeAbstract
     protected function addChild(NcursesVarDumpTypeAbstract $child)
     {
         $this->children[] = $child;
+    }
+
+    /**
+     * Return string array with highlighted text search
+     * @return array|null
+     */
+    protected function getStringArraySearch()
+    {
+        return $this->strArraySearch;
+    }
+
+    /**
+     * Rebuild string array with highlighted text search
+     */
+    protected function rebuildStringArraySearch()
+    {
+        if (null === $this->searchText || null === $this->strArraySearch) {
+            return;
+        }
+
+        $this->strArraySearch = null;
+        $this->strArraySearch = $this->searchInStringArray($this->getStringArray(), $this->searchText);
     }
 }

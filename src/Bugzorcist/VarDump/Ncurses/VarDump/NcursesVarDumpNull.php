@@ -22,7 +22,6 @@ class NcursesVarDumpNull extends NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        // TODO search
         if ("null" != $tree["type"] && "NULL" != $tree["type"]) {
             throw new \InvalidArgumentException("Invalid var tree given, expected 'null'");
         }

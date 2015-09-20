@@ -22,7 +22,6 @@ class NcursesVarDumpObject extends NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        // TODO search
         if ("object" != $tree["type"]) {
             throw new \InvalidArgumentException("Invalid var tree given, expected 'object'");
         }
@@ -65,8 +64,32 @@ class NcursesVarDumpObject extends NcursesVarDumpTypeAbstract
      */
     public function getStringArray()
     {
-        $strArray = parent::getStringArray();
+        return $this->highlightReference(parent::getStringArray());
+    }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function getStringArrayCollapsed()
+    {
+        return $this->highlightReference(parent::getStringArrayCollapsed());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getStringArrayExpanded()
+    {
+        return $this->highlightReference(parent::getStringArrayExpanded());
+    }
+
+    /**
+     * Highlights reference id in a string array
+     * @param array $strArray
+     * @return array
+     */
+    protected function highlightReference(array $strArray)
+    {
         // modify the color of the object id
         if ($this->isHighlightedAsReferencer()) {
             // this element is the one that point to another element

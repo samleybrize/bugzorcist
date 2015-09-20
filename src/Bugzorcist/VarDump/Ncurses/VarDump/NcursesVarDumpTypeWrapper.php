@@ -64,7 +64,6 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
      */
     public function __construct(NcursesVarDumpTypeAbstract $wrapped, NcursesVarDumpTypeAbstract $parent = null, $strPrefix = null)
     {
-        // TODO search
         parent::__construct(array(), $parent);
         $this->wrapped          = $wrapped;
         $this->strPrefix        = $this->buildTextArray($strPrefix);
@@ -131,11 +130,31 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
      */
     public function getStringArray()
     {
-        if (null === $this->strArrayCache) {
+        if (null !== ($strArraySearch = $this->getStringArraySearch())) {
+            // return string array with highlighted text search
+            return $strArraySearch;
+        } elseif (null === $this->strArrayCache) {
+            // build string array cache
             $this->strArrayCache = array_merge($this->strPrefix, $this->wrapped->getStringArray());
         }
 
         return $this->strArrayCache;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getStringArrayCollapsed()
+    {
+        return array_merge($this->strPrefix, $this->wrapped->getStringArrayCollapsed());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getStringArrayExpanded()
+    {
+        return array_merge($this->strPrefix, $this->wrapped->getStringArrayExpanded());
     }
 
     /**
@@ -200,7 +219,7 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     public function highlightAsReferencer($highlight)
     {
         $this->wrapped->highlightAsReferencer($highlight);
-        $this->notifyChildModification($this);
+        parent::highlightAsReferencer($highlight);
     }
 
     /**
@@ -209,7 +228,7 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
     public function highlightAsReferenced($highlight)
     {
         $this->wrapped->highlightAsReferenced($highlight);
-        $this->notifyChildModification($this);
+        parent::highlightAsReferenced($highlight);
     }
 
     /**

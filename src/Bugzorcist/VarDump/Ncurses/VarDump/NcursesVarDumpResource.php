@@ -22,7 +22,6 @@ class NcursesVarDumpResource extends NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        // TODO search
         if ("resource" != $tree["type"]) {
             throw new \InvalidArgumentException("Invalid var tree given, expected 'resource'");
         }

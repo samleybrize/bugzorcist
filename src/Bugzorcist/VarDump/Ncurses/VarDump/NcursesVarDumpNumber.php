@@ -22,7 +22,6 @@ class NcursesVarDumpNumber extends NcursesVarDumpTypeAbstract
      */
     public function __construct(array $tree, NcursesVarDumpTypeAbstract $parent = null)
     {
-        // TODO search
         if ("integer" != $tree["type"] && "long" != $tree["type"] && "float" != $tree["type"] && "double" != $tree["type"]) {
             throw new \InvalidArgumentException("Invalid var tree given, expected one of 'integer', 'long', 'float', 'double");
         }
