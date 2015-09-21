@@ -180,7 +180,7 @@ class NcursesVarDump implements NcursesInterface
 
     /**
      * Found search occurences UID list
-     * @var array
+     * @var \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract[]
      */
     private $searchFoundList = array();
 
@@ -352,6 +352,84 @@ class NcursesVarDump implements NcursesInterface
 
                         $previousSearchText = $this->searchText;
                     }
+                }
+                break;
+
+            // "n" / "N" key
+            case 110:
+            case 78:
+                // got to next search occurence
+                if ($this->showSearchPad && !$this->editSearchPad) {
+                    // if no match, do nothing
+                    if (empty($this->searchFoundList)) {
+                        break;
+                    }
+
+                    // iterate through all found occurences
+                    // find the first whose Y position is higher than cursor Y position, or the first hidden element
+                    foreach ($this->searchFoundList as $var) {
+                        $varPosY = $var->getLastPosY();
+
+                        if (null === $varPosY || $varPosY > $this->cursorPositionY) {
+                            // expand + expand parents
+                            // go to its new Y pos
+                            $this->disablePrint = true;
+                            $var->expand(true);
+                            $this->refresh();
+                            $this->disablePrint = false;
+                            $this->gotoPositionY($var->getLastPosY());
+                            break 2;
+                        }
+                    }
+
+                    // if none found, go to the first occurence
+                    reset($this->searchFoundList);
+                    $var                = current($this->searchFoundList);
+                    $this->disablePrint = true;
+                    $var->expand(true);
+                    $this->refresh();
+                    $this->disablePrint = false;
+                    $this->gotoPositionY($var->getLastPosY());
+                }
+                break;
+
+            // "p" / "P" key
+            case 112:
+            case 80:
+                // got to previous search occurence
+                if ($this->showSearchPad && !$this->editSearchPad) {
+                    // if no match, do nothing
+                    if (empty($this->searchFoundList)) {
+                        break;
+                    }
+
+                    // iterate through all found occurences
+                    // find the first whose Y position is lower than cursor Y position, or the first hidden element
+                    $searchFoundList = array_reverse($this->searchFoundList);
+
+                    foreach ($searchFoundList as $var) {
+                        $varPosY = $var->getLastPosY();
+
+                        if (null === $varPosY || $varPosY < $this->cursorPositionY) {
+                            // expand + expand parents
+                            // go to its new Y pos
+                            $this->disablePrint = true;
+                            $var->expand(true);
+                            $this->refresh();
+                            $this->disablePrint = false;
+                            $this->gotoPositionY($var->getLastPosY());
+                            break 2;
+                        }
+                    }
+
+                    // if none found, go to the last occurence
+                    end($this->searchFoundList);
+                    $var                = current($this->searchFoundList);
+                    $this->disablePrint = true;
+                    $var->expand(true);
+                    $this->refresh();
+                    $this->disablePrint = false;
+                    $this->gotoPositionY($var->getLastPosY());
                 }
                 break;
 

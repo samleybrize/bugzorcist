@@ -103,9 +103,9 @@ abstract class NcursesVarDumpTypeAbstract
 
     /**
      * Last known Y position
-     * @var int
+     * @var int|null
      */
-    private $lastPosY = 0;
+    private $lastPosY = null;
 
     /**
      * Indicates if this element is a referencer
@@ -230,12 +230,12 @@ abstract class NcursesVarDumpTypeAbstract
             // notify parent, if any
             if ($this->parent) {
                 $this->parent->notifyChildModification($this);
-
-                // expand parent
-                if ($expandParents) {
-                    $this->parent->expand(true);
-                }
             }
+        }
+
+        // expand parent
+        if ($expandParents && $this->parent) {
+            $this->parent->expand(true);
         }
     }
 
@@ -253,6 +253,7 @@ abstract class NcursesVarDumpTypeAbstract
 
             foreach ($children as $child) {
                 $child->collapse(true);
+                $child->setLastPosY(null);
             }
         }
 
@@ -461,7 +462,7 @@ abstract class NcursesVarDumpTypeAbstract
 
     /**
      * Returns last known Y position
-     * @return int
+     * @return int|null a null value means that the element is hidden
      */
     public function getLastPosY()
     {
@@ -470,11 +471,11 @@ abstract class NcursesVarDumpTypeAbstract
 
     /**
      * Sets last known Y position
-     * @param int $pos
+     * @param int|null $pos a null value means that the element is hidden
      */
     public function setLastPosY($pos)
     {
-        $this->lastPosY = (int) $pos;
+        $this->lastPosY = null !== $pos ? (int) $pos : null;
     }
 
     /**

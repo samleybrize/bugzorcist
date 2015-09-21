@@ -275,6 +275,8 @@ class NcursesHelp implements NcursesInterface
                 "F7"                => "Expand all",
                 "F8"                => "Toggle highlighting",
                 "F9"                => "Search",
+                "N"                 => "Next search occurence",
+                "P"                 => "Previous search occurence",
                 "Enter"             => "Expand/collapse highlighted element",
                 "Up/down arrow"     => "Move the cursor vertically",
                 "Left/right arrow"  => "Scroll the window horizontally",

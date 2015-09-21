@@ -227,8 +227,10 @@ class VarDumpNcurses
         switch ($keyCode) {
             // escape key
             // "q" key
+            // "Q" key
             case 27:
             case 113:
+            case 81:
                 // close interface
                 return false;
                 break;
