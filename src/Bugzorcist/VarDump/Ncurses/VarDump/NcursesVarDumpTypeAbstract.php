@@ -593,7 +593,7 @@ abstract class NcursesVarDumpTypeAbstract
     protected function searchInStringArray(array $stringArray, $searchText)
     {
         $searchStart        = 0;
-        $stringInline       = $this->stringArrayToString($this->getStringArray());
+        $stringInline       = $this->stringArrayToString($stringArray);
         $stringInlineLength = strlen($stringInline);
 
         while (
