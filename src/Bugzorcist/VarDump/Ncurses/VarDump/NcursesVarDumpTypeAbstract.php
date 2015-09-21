@@ -201,6 +201,15 @@ abstract class NcursesVarDumpTypeAbstract
     }
 
     /**
+     * Sets parent element
+     * @param \Bugzorcist\VarDump\Ncurses\VarDump\NcursesVarDumpTypeAbstract $parent
+     */
+    public function setParent(NcursesVarDumpTypeAbstract $parent)
+    {
+        $this->parent = $parent;
+    }
+
+    /**
      * Indicates if this element is expandable
      * @return boolean
      */

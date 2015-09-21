@@ -69,6 +69,13 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
         $this->strPrefix        = $this->buildTextArray($strPrefix);
         $this->strPrefixHeight  = !empty($strPrefix) ? $this->calculateStringHeight($strPrefix) : 0;
         $this->strPrefixWidth   = !empty($strPrefix) ? $this->calculateStringWidth($strPrefix) : 0;
+
+        // replace children's parent
+        $children = $this->getChildren(true);
+
+        foreach ($children as $child) {
+            $child->setParent($this);
+        }
     }
 
     /**
