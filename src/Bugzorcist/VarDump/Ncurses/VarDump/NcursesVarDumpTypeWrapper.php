@@ -218,6 +218,7 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
      */
     public function highlightAsReferencer($highlight)
     {
+        $this->clearCaches();
         $this->wrapped->highlightAsReferencer($highlight);
         parent::highlightAsReferencer($highlight);
     }
@@ -227,8 +228,18 @@ class NcursesVarDumpTypeWrapper extends NcursesVarDumpTypeAbstract
      */
     public function highlightAsReferenced($highlight)
     {
+        $this->clearCaches();
         $this->wrapped->highlightAsReferenced($highlight);
         parent::highlightAsReferenced($highlight);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function clearSearch()
+    {
+        $this->clearCaches();
+        parent::clearSearch();
     }
 
     /**

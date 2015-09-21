@@ -182,7 +182,7 @@ class NcursesVarDump implements NcursesInterface
      * Found search occurences UID list
      * @var array
      */
-    private $searchFoundUidList = array();
+    private $searchFoundList = array();
 
     /**
      * Whether to show search pad
@@ -304,7 +304,7 @@ class NcursesVarDump implements NcursesInterface
                 $this->cursorHighlight = !$this->cursorHighlight;
                 break;
 
-            // TODO F9
+            // F9
             case NCURSES_KEY_F9:
                 // search text
                 $this->showSearchPad    = true;
@@ -324,21 +324,14 @@ class NcursesVarDump implements NcursesInterface
                         $this->editSearchPad            = false;
                         $this->searchText               = "";
                         $this->searchFoundOccurences    = 0;
-                        $this->searchFoundUidList       = array();
+                        $this->searchFoundList          = array();
+                        $this->var->clearSearch();
                         break;
                     } elseif (13 === $searchKeyCode) {
                         // end input if pressed key is ENTER
                         $this->editSearchPad            = false;
-                        $this->searchFoundOccurences    = 0;
-                        $this->searchFoundUidList       = array();
-
-                        $this->internalWriteEnabled     = true;
-                        $this->refresh();
-
-                        $this->internalWriteEnabled     = false;
-                        $this->refresh();
-
-                        $this->searchFoundUidList       = array_unique($this->searchFoundUidList);
+                        $this->searchFoundList          = $this->var->searchText($this->searchText);
+                        $this->searchFoundOccurences    = count($this->searchFoundList);
                         break;
                     } elseif (NCURSES_KEY_BACKSPACE === $searchKeyCode) {
                         // delete last character
@@ -801,135 +794,6 @@ class NcursesVarDump implements NcursesInterface
             $this->highlightRefYList[$posY] :
             (int) $posY
         ;
-    }
-
-    // TODO todel
-    /**
-     * Prints a text. The text may contain color tags like "<<4>>" where "4" is the color number as declared by the VarDumpNcurses::COLOR_* constants.
-     * @param string $text text to print
-     * @param string $uid [optional] element UID of the text being printed
-     * @return int number of characters printed
-     */
-    protected function printText($text, $uid = null)
-    {
-        // don't want to write outside of the viewport
-        if (!$this->internalWriteEnabled && $this->isBeingPrintedOutside($text)) {
-            return 0;
-        }
-
-        // search for color tags
-        $this->pushPositionState();
-
-        $matches    = array();
-        $pattern    = "#<<[0-9]+>>#";
-        preg_match_all($pattern, $text, $matches);
-        $matches    = $matches[0];
-
-        $text       = preg_split($pattern, $text);
-        $text       = array_reverse(array_reverse($text));
-
-        // if the text does not begin with a color tag, we add one with default color
-        if (count($text) > count($matches)) {
-            array_unshift($matches, "<<0>>");
-        }
-
-        // text search
-        $searchStart        = 0;
-        $textInline         = implode("", $text);
-        $textInlineLength   = strlen($textInline);
-
-        while (
-            null !== $this->searchText &&
-            "" !== $this->searchText &&
-            $searchStart <= $textInlineLength &&
-            false !== ($searchPos = stripos($textInline, $this->searchText, $searchStart))
-        ) {
-            // found text
-            $curPos             = 0;
-            $searchLength       = strlen($this->searchText);
-            $replaceTextList    = array();
-            $replaceColorList   = array();
-
-            if ($this->internalWriteEnabled) {
-                $this->searchFoundOccurences++;
-
-                if ($uid) {
-                    $this->searchFoundUidList[] = $uid;
-                }
-            }
-
-            // identify pieces that match search text
-            // for the text search "rt", replacement is :
-            // aze[rt]y        => aze / rt / y
-            // aze[r] / [t]y   => aze / rt / y
-            foreach ($text as $k => $t) {
-                $tLength = strlen($t);
-
-                if ($searchPos >= $curPos && $searchPos < $curPos + $tLength) {
-                    $found          = substr($t, $searchPos - $curPos, $searchLength);
-                    $foundLength    = strlen($found);
-                    $pre            = substr($t, 0, $searchPos - $curPos);
-                    $post           = substr($t, $searchPos - $curPos + $foundLength);
-
-                    if (!array_key_exists($k, $replaceTextList)) {
-                        $replaceTextList[$k]    = array();
-                        $replaceColorList[$k]   = array();
-                    }
-
-                    // add text before match to replacement
-                    if ($pre) {
-                        $replaceTextList[$k][]  = $pre;
-                        $replaceColorList[$k][] = $matches[$k];
-                    }
-
-                    // add matched text
-                    $replaceTextList[$k][]  = $found;
-                    $replaceColorList[$k][] = "<<" . self::COLOR_SEARCH_MATCH . ">>";
-
-                    // add text after match to replacement
-                    if ($post) {
-                        $replaceTextList[$k][]  = $post;
-                        $replaceColorList[$k][] = $matches[$k];
-                    }
-
-                    // for further processing
-                    $searchPos     += $foundLength;
-                    $searchLength  -= $foundLength;
-                }
-
-                if ($searchLength <= 0) {
-                    // there is no more text to search
-                    break;
-                }
-
-                $curPos += $tLength;
-            }
-
-            // do replacement
-            krsort($replaceTextList);
-
-            foreach ($replaceTextList as $k => $replace) {
-                $text       = array_merge(array_slice($text, 0, $k), $replace, array_slice($text, $k + 1));
-                $matches    = array_merge(array_slice($matches, 0, $k), $replaceColorList[$k], array_slice($matches, $k + 1));
-            }
-
-            // to find next occurence in same text
-            $searchStart += $searchPos;
-        }
-
-        // print colored text
-        $written    = 0;
-
-        foreach ($text as $k => $t) {
-            $color      = array_key_exists($k, $matches) ? (int) substr($matches[$k], 2) : 0;
-            $length     = strlen($t);
-            $written   += $length;
-
-            $this->printRawText($t, $color);
-        }
-
-        $this->popPositionState();
-        return $written;
     }
 
     /**

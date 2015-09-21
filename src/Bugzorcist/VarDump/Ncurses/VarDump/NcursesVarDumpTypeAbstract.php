@@ -11,7 +11,6 @@
 
 namespace Bugzorcist\VarDump\Ncurses\VarDump;
 
-// TODO search/object id highlight problem
 /**
  * Ncurses abstract var type
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -530,30 +529,26 @@ abstract class NcursesVarDumpTypeAbstract
         $this->searchText   = $searchText;
 
         // search text
-        $found = null !== $this->strArraySearch;
+        // if no match is found on expanded text then we assume no match
+        // unless element is not expandable
+        // this is necessary for some elements (eg: multiline string)
+        $isExpandable   = $this->isExpandable();
+        $strArray       = $isExpandable ? $this->getStringArrayExpanded() : $this->getStringArrayCollapsed();
+        $strArraySearch = $this->searchInStringArray($strArray, $searchText);
 
-        if (!$found) {
-            // if no match is found on expanded text then we assume no match
-            // unless element is not expandable
-            // this is necessary for some elements (eg: multiline string)
-            $isExpandable   = $this->isExpandable();
-            $strArray       = $isExpandable ? $this->getStringArrayExpanded() : $this->getStringArrayCollapsed();
-            $strArraySearch = $this->searchInStringArray($strArray, $searchText);
+        if ($strArraySearch !== $strArray) {
+            // at least one occurence was found
+            $this->strArraySearch   = $strArraySearch;
+            $foundElementList[]     = $this;
 
-            if ($strArraySearch !== $strArray) {
-                // at least one occurence was found
-                $found                  = true;
-                $this->strArraySearch   = $strArraySearch;
-
-                // if element is expandable but not expanded, compute its collapsed version
-                if ($isExpandable && !$this->isExpanded()) {
-                    $this->strArraySearch = $this->searchInStringArray($this->getStringArrayCollapsed(), $searchText);
-                }
+            // if element is expandable but not expanded, compute its collapsed version
+            if ($isExpandable && !$this->isExpanded()) {
+                $this->strArraySearch = $this->searchInStringArray($this->getStringArrayCollapsed(), $searchText);
             }
-        }
-
-        if ($found) {
-            $foundElementList[] = $this;
+        } elseif (null !== $this->strArraySearch) {
+            // no occurence was found
+            // clear previous search
+            $this->clearSearch();
         }
 
         // search in children
@@ -578,6 +573,15 @@ abstract class NcursesVarDumpTypeAbstract
         foreach ($children as $child) {
             $child->clearSearch();
         }
+    }
+
+    /**
+     * Indicates if this element has found an occurence of the search text
+     * @return boolean
+     */
+    public function hasFoundTextSearch()
+    {
+        return null !== $this->strArraySearch;
     }
 
     /**

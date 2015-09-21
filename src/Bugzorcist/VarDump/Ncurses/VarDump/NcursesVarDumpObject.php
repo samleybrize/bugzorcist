@@ -64,7 +64,13 @@ class NcursesVarDumpObject extends NcursesVarDumpTypeAbstract
      */
     public function getStringArray()
     {
-        return $this->highlightReference(parent::getStringArray());
+        $strArray = parent::getStringArray();
+
+        if (!$this->hasFoundTextSearch()) {
+            $strArray = $this->highlightReference($strArray);
+        }
+
+        return $strArray;
     }
 
     /**
