@@ -83,7 +83,7 @@ class PDOProfilerStatement extends \PDOStatement
     {
         $parameters = (null === $input_parameters) ? $this->binds : $input_parameters;
 
-        $this->profiler->startQuery($this->statement->queryString, $this->binds);
+        $this->profiler->startQuery($this->statement->queryString, $parameters);
         $result = $this->statement->execute($input_parameters);
         $this->profiler->stopQuery();
 
