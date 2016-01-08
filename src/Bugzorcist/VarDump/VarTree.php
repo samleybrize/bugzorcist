@@ -11,6 +11,8 @@
 
 namespace Bugzorcist\VarDump;
 
+use Bugzorcist\Utils\ObjectHandle;
+
 /**
  * Construct the tree representation of a var
  * @author Stephen Berquet <stephen.berquet@gmail.com>
@@ -138,7 +140,7 @@ class VarTree
 
                 $this->objectList[]     = $var;
                 $this->objectTreeList[] = &$level;
-                $level["id"]            = spl_object_hash($var);
+                $level["id"]            = ObjectHandle::getObjectHandle($var);
                 $level["class"]         = get_class($var);
                 $level["count"]         = 0;
                 $level["properties"]    = array();

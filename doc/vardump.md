@@ -54,3 +54,12 @@ VarDumpNcurses::dump($var, "label");
 // dumps the var $var without the stack trace
 VarDumpNcurses::dump($var, "label", false);
 ```
+
+All in one
+----------
+
+The `bzdump()` function calls the right dumper depending on the context (VarDumpFirePhp in an AJAX request, VarDumpNcurses in command line, ...)
+
+```php
+bzdump($var, "label");
+```

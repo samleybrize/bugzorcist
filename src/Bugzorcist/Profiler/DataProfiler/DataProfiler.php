@@ -191,6 +191,10 @@ class DataProfiler implements \Countable, \Iterator
             $profile->end();
             $this->totalElapsedSecs += $profile->getElapsedSecs();
 
+            // profile is cloned to workaround a side effect of the serialize function
+            // it find the profile object in $this->profileList and serialize as a reference of it, resulting in "r:2;"
+            $profile = clone $profile;
+
             // the profile is serialised into a temporary file
             // this minimizes the overhead of holding many profiles into the heap
             file_put_contents($this->path . $identifier, serialize($profile));
