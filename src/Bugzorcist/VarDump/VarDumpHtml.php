@@ -216,9 +216,10 @@ class VarDumpHtml
             $funcName   = array_key_exists("class", $event) ? "{$event['class']}{$event['type']}{$event['function']}" : "{$event['function']}";
             $file       = array_key_exists("file", $event)  ? $event['file'] : "-";
             $line       = array_key_exists("line", $event)  ? $event['line'] : "-";
-            $args       = array_key_exists("args", $event)  ? $event['args'] : array();
+            $rawArgs    = array_key_exists("args", $event)  ? $event['args'] : array();
+            $args       = array();
 
-            foreach ($args as $k => $arg) {
+            foreach ($rawArgs as $k => $arg) {
                 $args[$k] = "object" == gettype($arg) ? get_class($arg) : gettype($arg);
             }
 
