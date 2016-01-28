@@ -102,7 +102,7 @@ class ExceptionHandler
     {
         // create a renderer depending on the context
         if ("cli" == PHP_SAPI) {
-            if (posix_isatty(STDOUT)) {
+            if (is_resource(STDOUT) && posix_isatty(STDOUT)) {
                 // attempt to create the ncurses based renderer
                 try {
                     $renderer = new ExceptionRendererNcurses($e);
