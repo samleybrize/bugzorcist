@@ -195,7 +195,6 @@ class VarDumpHtml
 
             // unknown type
             default:
-                throw new \UnexpectedValueException("Unknown var type '{$level["type"]}'");
         }
 
         return $render;

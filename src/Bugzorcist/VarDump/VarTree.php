@@ -182,7 +182,7 @@ class VarTree
 
             // unknown type
             default:
-                throw new \UnexpectedValueException("Unknown var type '{$level["type"]}'");
+                error_log("Unknown var type '{$level["type"]}'");
         }
 
         return $level;
